@@ -80,6 +80,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
           <span>📞</span>
           <span className="tracking-wide">9180471825</span>
         </a>
+        <a
+          id="navbarDirectCall2"
+          href="tel:9972459417"
+          className="hidden sm:inline-flex order-2 min-[1200px]:order-3 items-center gap-1.5 bg-[#840000] hover:bg-[#990000] text-[#ffdf88] hover:text-white px-3 py-1.5 rounded-full border border-[#a28321] text-sm font-bold shadow-sm transition no-underline"
+          title="Call Doorstep Royale Spa: 9972459417"
+        >
+          <span>📞</span>
+          <span className="tracking-wide">9972459417</span>
+        </a>
 
         {/* Mobile menu toggle */}
         <button

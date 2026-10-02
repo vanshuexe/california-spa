@@ -6,6 +6,7 @@ import {
   SPA_TAGLINE,
   SPA_LOGO_URL,
   SPA_PHONE,
+  SPA_PHONE_2,
   SPA_PHONE_FORMATTED,
   SPA_WHATSAPP_LINK,
   PRICING_DATA,
@@ -95,6 +96,15 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             >
               <span>📞</span>
               <span>{SPA_PHONE}</span>
+            </a>
+
+            <a
+              id="heroCallBtn2"
+              href={`tel:${SPA_PHONE_2}`}
+              className="btn btn-action text-sm sm:text-base px-6 py-2.5 inline-flex items-center gap-2 shadow hover:scale-105 transition no-underline text-[#ffdf88] hover:text-white"
+            >
+              <span>📞</span>
+              <span>{SPA_PHONE_2}</span>
             </a>
 
             <a

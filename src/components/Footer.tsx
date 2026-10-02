@@ -182,6 +182,13 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, onShare }) => {
             >
               <span>📞 9180471825</span>
             </a>
+            <a
+              id="footerCallBtn2"
+              href="tel:9972459417"
+              className="btn btn-action text-sm px-5 py-2 inline-flex items-center gap-2 no-underline text-[#ffdf88] hover:text-white"
+            >
+              <span>📞 9972459417</span>
+            </a>
           </div>
 
           <div className="text-center mt-4 text-[#cfb687] text-xs font-sans">

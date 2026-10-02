@@ -5,6 +5,10 @@ export const SPA_TAGLINE = 'Luxury Wellness, At Your Doorstep';
 export const SPA_LOGO_URL = 'https://ik.imagekit.io/fdhgiehjz/royalspalogo.jpeg';
 export const SPA_PHONE = '9180471825';
 export const SPA_PHONE_FORMATTED = '+91 9180471825';
+export const SPA_PHONE_2 = '9972459417';
+export const SPA_PHONES_TEXT = `${SPA_PHONE} / ${SPA_PHONE_2}`;
+export const SPA_WHATSAPP_LINK_2 =
+  'https://wa.me/919972459417?text=Hello%20Doorstep%20Royale%20Spa,%20I%20would%20like%20to%20book%20a%20luxury%20home%20spa%20experience';
 export const SPA_WHATSAPP_LINK =
   'https://wa.me/919180471825?text=Hello%20Doorstep%20Royale%20Spa,%20I%20would%20like%20to%20book%20a%20luxury%20home%20spa%20experience';
 

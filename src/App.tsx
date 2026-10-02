@@ -3,6 +3,7 @@ import { PageId } from './types';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { SpaMusicPlayer } from './components/SpaMusicPlayer';
+import { HelpChatWidget } from './components/HelpChatWidget';
 import { GlobalModal, AlertState, ConfirmState } from './components/GlobalModal';
 
 // Pages
@@ -157,6 +158,9 @@ export default function App() {
           {currentPage === 'admin' && <AdminPage />}
         </div>
       </main>
+
+      {/* Floating help chat (hidden on the admin page) */}
+      {currentPage !== 'admin' && <HelpChatWidget onNavigate={handleNavigate} />}
 
       {/* Background Spa Music Player */}
       <SpaMusicPlayer />

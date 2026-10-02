@@ -5,6 +5,7 @@ import {
   BANGALORE_AREAS,
   SPA_NAME,
   SPA_PHONE,
+  SPA_PHONE_2,
   SPA_PHONE_FORMATTED,
   SPA_WHATSAPP_LINK,
   PRICING_DATA,
@@ -73,6 +74,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           <h4 className="text-lg font-bold text-[#840000] mb-1">Direct Phone & WhatsApp</h4>
           <p className="text-lg font-extrabold text-[#840000] my-1">
             {SPA_PHONE}
+            <br />
+            {SPA_PHONE_2}
           </p>
           <p className="text-xs text-[#228b22] font-semibold leading-relaxed">
             Instant booking confirmation, therapist availability, and location support.
@@ -122,6 +125,13 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           className="btn btn-action text-base px-6 py-2.5 inline-flex items-center gap-2 no-underline text-[#ffdf88] hover:text-white shadow"
         >
           <span>📞 Call {SPA_PHONE}</span>
+        </a>
+
+        <a
+          href={`tel:${SPA_PHONE_2}`}
+          className="btn btn-action text-base px-6 py-2.5 inline-flex items-center gap-2 no-underline text-[#ffdf88] hover:text-white shadow"
+        >
+          <span>📞 Call {SPA_PHONE_2}</span>
         </a>
 
         <a

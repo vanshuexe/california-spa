@@ -8,6 +8,8 @@ import {
   SPA_NAME,
   SPA_LOGO_URL,
   SPA_PHONE,
+  SPA_PHONE_2,
+  SPA_PHONES_TEXT,
   SPA_WHATSAPP_LINK,
   PRICING_DATA,
 } from '../data/siteData';
@@ -252,12 +254,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     if (result.status === 'paid') {
       onShowAlert(
         'Payment Successful - Booking Confirmed!',
-        `Thank you ${name}! Your payment was received and your booking is confirmed.\n\nBooking ID: ${bookingRef}${email ? `\n\nA confirmation has been sent to ${email}.` : ''}\n\nOur coordinator will call you from 9180471825 shortly.`
+        `Thank you ${name}! Your payment was received and your booking is confirmed.\n\nBooking ID: ${bookingRef}${email ? `\n\nA confirmation has been sent to ${email}.` : ''}\n\nOur coordinator will call you from ${SPA_PHONES_TEXT} shortly.`
       );
     } else if (result.status === 'failed') {
       onShowAlert(
         'Payment Failed',
-        `${result.message}\n\nYour booking ${bookingRef} is saved but UNPAID and not confirmed. You can retry from My Account (sign in) or call ${SPA_PHONE}.`
+        `${result.message}\n\nYour booking ${bookingRef} is saved but UNPAID and not confirmed. You can retry from My Account (sign in) or call ${SPA_PHONES_TEXT}.`
       );
     } else {
       onShowAlert(
@@ -382,6 +384,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             className="btn btn-action text-xs sm:text-sm px-4 py-1.5 inline-flex items-center gap-1.5 no-underline text-[#ffdf88] hover:text-white"
           >
             <span>Call: {SPA_PHONE}</span>
+          </a>
+          <a
+            id="bookingPageCallBtn2"
+            href={`tel:${SPA_PHONE_2}`}
+            className="btn btn-action text-xs sm:text-sm px-4 py-1.5 inline-flex items-center gap-1.5 no-underline text-[#ffdf88] hover:text-white"
+          >
+            <span>Call: {SPA_PHONE_2}</span>
           </a>
           <a
             id="bookingPageWhatsAppBtn"
