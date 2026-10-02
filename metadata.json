@@ -1,0 +1,7 @@
+{
+  "name": "California SPA",
+  "description": "Doorstep Royale Spa offers luxury wellness, doorstep home massage, and professional spa treatments in Bangalore. Call 9180471825.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
