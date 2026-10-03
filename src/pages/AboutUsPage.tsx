@@ -184,7 +184,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
           <span className="text-2xl block mb-1">💎</span>
           <h5 className="font-bold text-[#840000] text-base mb-1">Transparent Pricing</h5>
           <p className="text-xs text-[#228b22] leading-relaxed">
-            Fixed rates (₹1,799 / ₹2,100 / ₹3,400) with zero surprise add-ons.
+            Fixed service rates (₹1,799 / ₹2,100 / ₹3,400). Travel is charged separately at actual auto fare.
           </p>
         </div>
       </div>
@@ -195,7 +195,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
         <p className="font29 block mb-4">
           Appointments are available daily from 9:00 AM to 7:00 PM across all parts of Bangalore.
           Transparent pricing starts from ₹1,799 for 60 minutes, ₹2,100 for 90 minutes, and ₹3,400
-          for 120 minutes. Experience five-star spa quality at a fraction of hotel rates.
+          for 120 minutes. The therapist's two-way auto fare is not included in the service fee and is paid by the client at the actual fare. Experience five-star spa quality at a fraction of hotel rates.
         </p>
         <div className="text-center mt-4 flex flex-wrap justify-center gap-4">
           <button

@@ -18,9 +18,15 @@ const QUICK = ['Prices', 'How to book', 'Payment', 'Areas covered', 'Timings', '
 
 const RULES: { keys: string[]; reply: string; actions?: Msg['actions'] }[] = [
   {
+    keys: ['travel', 'auto fare', 'autofare', 'rickshaw', 'fare', 'transport', 'conveyance', 'extra charge', 'additional charge', 'hidden', 'surcharge', 'extra cost'],
+    reply:
+      "The therapist's travel charges are not included in the service fee. You pay the two-way auto fare from the therapist's location to yours and back, based on the actual auto fare.",
+    actions: ['book'],
+  },
+  {
     keys: ['price', 'rate', 'cost', 'charge', 'kitna', 'paisa', 'fee', 'amount'],
     reply:
-      'Our rates: 30 min ₹999 • 45 min ₹1,299 • 60 min ₹1,799 • 90 min ₹2,100 (most popular) • 120 min ₹3,400. All-inclusive, no hidden charges.',
+      "Our rates: 30 min ₹999 • 45 min ₹1,299 • 60 min ₹1,799 • 90 min ₹2,100 (most popular) • 120 min ₹3,400. Travel is extra: the therapist's two-way auto fare is not included and is paid at the actual fare.",
     actions: ['book'],
   },
   {

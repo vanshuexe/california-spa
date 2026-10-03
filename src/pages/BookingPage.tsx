@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { PageId } from '../types';
 import { supabase, isSupabaseConfigured, phoneToAuthEmail } from '../lib/supabase';
 import { payForBooking } from '../lib/payment';
+import { TravelNotice } from '../components/TravelNotice';
+import { CHAT_EVENT, CHAT_OPEN_KEY, chatAvailable, chatState, useUnreadCounts } from '../lib/chat';
+import { ChatWindow } from '../components/ChatWindow';
 import { useTherapists } from '../lib/useTherapists';
 import {
   BANGALORE_AREAS,
@@ -29,6 +32,8 @@ interface MyBooking {
   client_name: string;
   client_phone: string;
   client_email: string | null;
+  therapist_id: string | null;
+  chat_blocked: boolean;
 }
 
 interface BookingPageProps {
@@ -63,6 +68,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
 
   const { therapists } = useTherapists();
   const [paying, setPaying] = useState(false);
+  const [travelAck, setTravelAck] = useState(false);
 
   // Customer account state
   const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
@@ -123,7 +129,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     setBookingsLoading(true);
     const { data, error } = await supabase
       .from('bookings')
-      .select('id, booking_ref, therapist, service_style, duration, booking_date, booking_time, area, price, status, payment_status, client_name, client_phone, client_email')
+      .select('id, booking_ref, therapist, service_style, duration, booking_date, booking_time, area, price, status, payment_status, client_name, client_phone, client_email, therapist_id, chat_blocked')
       .eq('user_id', sessionUserId)
       .order('booking_date', { ascending: true });
     setBookingsLoading(false);
@@ -138,12 +144,42 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     loadBookings();
   }, [sessionUserId]);
 
+  const { counts: unreadCounts, reload: reloadUnread } = useUnreadCounts(sessionUserId);
+  const [openChatId, setOpenChatId] = useState<string | null>(null);
+  const openChat = (id: string) => {
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+    setOpenChatId(id);
+    setActiveTab('account');
+  };
+
+  // Open a chat when the user taps a notification toast.
+  useEffect(() => {
+    const check = () => {
+      try {
+        const id = sessionStorage.getItem(CHAT_OPEN_KEY);
+        if (id) {
+          sessionStorage.removeItem(CHAT_OPEN_KEY);
+          openChat(id);
+        }
+      } catch {
+        /* ignore */
+      }
+    };
+    check();
+    window.addEventListener(CHAT_OPEN_KEY, check);
+    window.addEventListener(CHAT_EVENT, loadBookings);
+    return () => {
+      window.removeEventListener(CHAT_OPEN_KEY, check);
+      window.removeEventListener(CHAT_EVENT, loadBookings);
+    };
+  }, [sessionUserId]);
+
   const todayStr = new Date().toISOString().split('T')[0];
   const upcomingBookings = myBookings.filter(
-    (b) => b.status !== 'cancelled' && b.booking_date >= todayStr
+    (b) => b.status !== 'cancelled' && b.status !== 'completed' && b.booking_date >= todayStr
   );
   const previousBookings = myBookings
-    .filter((b) => b.status === 'cancelled' || b.booking_date < todayStr)
+    .filter((b) => b.status === 'cancelled' || b.status === 'completed' || b.booking_date < todayStr)
     .reverse();
 
   const handleCancelBooking = async (b: MyBooking) => {
@@ -185,6 +221,13 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     e.preventDefault();
     if (!clientName.trim() || !clientPhone.trim()) {
       onShowAlert('Required Fields', 'Please enter your Full Name and 10-digit Mobile Number.');
+      return;
+    }
+    if (!travelAck) {
+      onShowAlert(
+        'Travel Charges',
+        "Please confirm that you understand the therapist's two-way auto fare is not included in the service fee and is paid by you at actuals."
+      );
       return;
     }
     if (clientPhone.trim().length < 9) {
@@ -254,7 +297,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     if (result.status === 'paid') {
       onShowAlert(
         'Payment Successful - Booking Confirmed!',
-        `Thank you ${name}! Your payment was received and your booking is confirmed.\n\nBooking ID: ${bookingRef}${email ? `\n\nA confirmation has been sent to ${email}.` : ''}\n\nOur coordinator will call you from ${SPA_PHONES_TEXT} shortly.`
+        `Thank you ${name}! Your payment was received and your booking is confirmed.\n\nBooking ID: ${bookingRef}${email ? `\n\nA confirmation has been sent to ${email}.` : ''}\n\nReminder: the therapist's two-way auto fare is not included in the service fee and is paid by you at the actual fare.\n\nOur coordinator will call you from ${SPA_PHONES_TEXT} shortly.`
       );
     } else if (result.status === 'failed') {
       onShowAlert(
@@ -736,8 +779,23 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               />
             </div>
 
+            <TravelNotice />
+            <label className="flex items-start gap-2 text-sm text-[#5a0101] font-semibold cursor-pointer">
+              <input
+                id="bkTravelAck"
+                type="checkbox"
+                checked={travelAck}
+                onChange={(e) => setTravelAck(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                I understand that the therapist's two-way auto fare is not included and I will pay the actual fare.{' '}
+                <span className="text-danger">*</span>
+              </span>
+            </label>
+
             <div className="bg-[#e8decb] p-3 rounded text-xs text-[#228b22] leading-relaxed">
-              <strong>Doorstep Royale Spa Guarantee:</strong> Transparent fixed rates (₹1,799 for 60m, ₹2,100 for 90m, ₹3400 for 120m). No unexpected surge pricing. The therapist brings sanitized fresh sheets, aromatic herbal oils, pain relief ointment, and ambient music directly to you.
+              <strong>Doorstep Royale Spa Guarantee:</strong> Transparent fixed service rates (₹1,799 for 60m, ₹2,100 for 90m, ₹3400 for 120m) with no surge pricing; travel is charged separately at actual auto fare. The therapist brings sanitized fresh sheets, aromatic herbal oils, pain relief ointment, and ambient music directly to you.
             </div>
 
             <div className="text-center pt-2">
@@ -859,8 +917,8 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="font-bold text-[#840000]">Booking ID: {b.booking_ref}</span>
                           <span className="flex gap-2 text-xs font-bold">
-                            <span className={`px-2 py-1 rounded ${b.status === 'cancelled' ? 'bg-red-100 text-red-800' : b.status === 'confirmed' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {b.status === 'cancelled' ? 'Cancelled' : b.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+                            <span className={`px-2 py-1 rounded ${b.status === 'cancelled' ? 'bg-red-100 text-red-800' : b.status === 'confirmed' ? 'bg-green-100 text-green-800' : b.status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              {b.status === 'cancelled' ? 'Cancelled' : b.status === 'confirmed' ? 'Confirmed' : b.status === 'completed' ? 'Completed' : 'Pending'}
                             </span>
                             <span className={`px-2 py-1 rounded ${b.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                               Payment: {b.payment_status.charAt(0).toUpperCase() + b.payment_status.slice(1)}
@@ -873,6 +931,22 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           📅 {b.booking_date} at {b.booking_time} • 📍 {b.area}
                           {b.price != null && <> • ₹{b.price.toLocaleString()}</>}
                         </p>
+                        {chatAvailable(b) && sessionUserId && (
+                          <div className="mt-3">
+                            <button
+                              type="button"
+                              className="btn btn-action px-4 py-1.5 text-sm"
+                              onClick={() => openChat(b.id)}
+                            >
+                              💬 {chatState(b).open ? 'Chat with Therapist' : 'Chat history'}
+                              {(unreadCounts[b.id] || 0) > 0 && (
+                                <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-xs">
+                                  {unreadCounts[b.id]}
+                                </span>
+                              )}
+                            </button>
+                          </div>
+                        )}
                         {actionable && b.status !== 'cancelled' && (
                           <div className="mt-3">
                             {reschedId === b.id ? (
@@ -1104,6 +1178,18 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             </form>
           </div>
         </div>
+      )}
+      {openChatId && sessionUserId && myBookings.find((b) => b.id === openChatId) && (
+        <ChatWindow
+          booking={myBookings.find((b) => b.id === openChatId)!}
+          myId={sessionUserId}
+          myRole="customer"
+          onClose={() => {
+            setOpenChatId(null);
+            reloadUnread();
+          }}
+          onChanged={loadBookings}
+        />
       )}
     </article>
   );

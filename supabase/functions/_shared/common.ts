@@ -55,6 +55,46 @@ async function sendEmail(to: string, subject: string, html: string) {
   if (!res.ok) console.error('Resend failed', res.status, await res.text());
 }
 
+// After payment: link the booking to a therapist so the chat can open.
+// 1) the therapist the customer picked, 2) otherwise the least busy therapist who has a login.
+// Mutates `booking` so the confirmation emails show the final therapist.
+// deno-lint-ignore no-explicit-any
+async function assignTherapist(db: SupabaseClient, booking: any) {
+  if (booking.therapist_id) return;
+  const { data: therapists } = await db.from('therapists').select('id, name');
+  if (!therapists?.length) return;
+
+  const picked = therapists.find(
+    (t: { name: string }) => t.name.toLowerCase() === String(booking.therapist || '').toLowerCase()
+  );
+  let chosen = picked;
+
+  if (!chosen) {
+    const { data: accounts } = await db.from('therapist_accounts').select('therapist_id');
+    const loginIds = new Set((accounts || []).map((a: { therapist_id: string }) => a.therapist_id));
+    const pool = therapists.filter((t: { id: string }) => loginIds.has(t.id));
+    const candidates = pool.length ? pool : therapists;
+
+    const today = new Date().toISOString().split('T')[0];
+    const { data: busy } = await db
+      .from('bookings')
+      .select('therapist_id')
+      .eq('status', 'confirmed')
+      .gte('booking_date', today)
+      .not('therapist_id', 'is', null);
+    const load: Record<string, number> = {};
+    for (const b of busy || []) load[b.therapist_id] = (load[b.therapist_id] || 0) + 1;
+    chosen = [...candidates].sort(
+      (a: { id: string }, b: { id: string }) => (load[a.id] || 0) - (load[b.id] || 0)
+    )[0];
+  }
+
+  if (!chosen) return;
+  await db.from('bookings').update({ therapist_id: chosen.id, therapist: chosen.name }).eq('id', booking.id);
+  booking.therapist_id = chosen.id;
+  booking.therapist = chosen.name;
+}
+
 // Marks a booking PAID + CONFIRMED. Idempotent: returns false if it was already paid
 // (verify endpoint and webhook can both call this safely).
 export async function markPaid(
@@ -79,6 +119,8 @@ export async function markPaid(
   if (error) throw error;
   if (!data) return false;
 
+  await assignTherapist(db, data);
+
   const summary = `
     <p><b>Booking ID:</b> ${data.booking_ref}</p>
     <p>${data.duration} ${data.service_style} with ${data.therapist}<br/>
@@ -88,7 +130,7 @@ export async function markPaid(
     await sendEmail(
       data.client_email,
       `Booking confirmed - ${data.booking_ref}`,
-      `<h2>Thank you ${data.client_name}, your booking is confirmed</h2>${summary}`
+      `<h2>Thank you ${data.client_name}, your booking is confirmed</h2>${summary}<p><b>Please note:</b> the therapist's travel charges are not included in the service fee. You will need to cover the two-way auto fare from the therapist's location to yours and back, based on the actual auto fare. Thank you for your understanding.</p>`
     );
   }
   const adminEmail = Deno.env.get('ADMIN_EMAIL');

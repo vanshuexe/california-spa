@@ -83,7 +83,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
 
       if (lower.includes('price') || lower.includes('cost') || lower.includes('rate') || lower.includes('charge')) {
         replyText =
-          'Our transparent rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100 - most popular), and 120 Minutes (₹3,400). Express sessions: 30 Mins (₹999), 45 Mins (₹1,299). All-inclusive, no hidden charges!';
+          'Our transparent rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100 - most popular), and 120 Minutes (₹3,400). Express sessions: 30 Mins (₹999), 45 Mins (₹1,299). Travel (the therapist\'s two-way auto fare) is not included and is paid at the actual fare.';
       } else if (lower.includes('phone') || lower.includes('contact') || lower.includes('call') || lower.includes('number')) {
         replyText =
           `You can call or WhatsApp Doorstep Royale Spa directly at ${SPA_PHONE} (9:00 AM to 7:00 PM daily).`;

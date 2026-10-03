@@ -12,7 +12,8 @@ export type PageId =
   | 'booking'
   | 'login'
   | 'register'
-  | 'admin';
+  | 'admin'
+  | 'therapist';
 
 export interface ServiceItem {
   id: string;

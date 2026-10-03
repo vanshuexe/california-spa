@@ -115,6 +115,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           >
             View Pricing Details
           </button>
+          <p className="text-xs text-[#5a0101] mt-2 mb-0 leading-snug">+ Travel (two-way auto fare) at actuals</p>
         </div>
       </div>
 
@@ -318,7 +319,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           Doorstep Royale Spa Guarantee
         </p>
         <p className="text-sm text-[#228b22] m-0 leading-relaxed">
-          Every session is conducted with genuine organic herbal oils, disposable fresh linens, clean equipment, and verified professional therapists. Transparent pricing with zero hidden charges.
+          Every session is conducted with genuine organic herbal oils, disposable fresh linens, clean equipment, and verified professional therapists. Transparent service pricing; the therapist's two-way auto fare is charged separately at actuals.
         </p>
       </div>
     </article>

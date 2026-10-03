@@ -5,6 +5,12 @@ export const SPA_TAGLINE = 'Luxury Wellness, At Your Doorstep';
 export const SPA_LOGO_URL = 'https://ik.imagekit.io/fdhgiehjz/royalspalogo.jpeg';
 export const SPA_PHONE = '9180471825';
 export const SPA_PHONE_FORMATTED = '+91 9180471825';
+// Travel is billed separately from the service fee.
+export const TRAVEL_NOTICE =
+  "The therapist's travel charges are not included in the service fee. The client will need to cover the two-way auto fare from the therapist's location to the client's location and back. The travel amount will be based on the actual auto fare. Thank you for your understanding.";
+export const TRAVEL_NOTICE_SHORT =
+  'Travel (two-way auto fare, at actuals) is not included in the service fee and is paid by the client.';
+
 export const SPA_PHONE_2 = '9972459417';
 export const SPA_PHONES_TEXT = `${SPA_PHONE} / ${SPA_PHONE_2}`;
 export const SPA_WHATSAPP_LINK_2 =

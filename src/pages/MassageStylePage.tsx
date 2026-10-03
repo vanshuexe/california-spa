@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { TravelNotice } from '../components/TravelNotice';
 import { PageId } from '../types';
 import {
   SERVICES_DATA,
@@ -125,7 +126,7 @@ export const MassageStylePage: React.FC<MassageStylePageProps> = ({ onNavigate }
             <thead>
               <tr className="border-b-2 border-[#840000] bg-[#e0d5c1] text-[#840000]">
                 <th className="py-3 px-4 font-bold text-base">Duration</th>
-                <th className="py-3 px-4 font-bold text-base">All-Inclusive Price</th>
+                <th className="py-3 px-4 font-bold text-base">Service Fee</th>
                 <th className="py-3 px-4 font-bold text-base">Description & Benefits</th>
                 <th className="py-3 px-4 font-bold text-base text-center">Action</th>
               </tr>
@@ -168,6 +169,8 @@ export const MassageStylePage: React.FC<MassageStylePageProps> = ({ onNavigate }
             </tbody>
           </table>
         </div>
+
+        <TravelNotice compact className="mt-4" />
 
         {/* Express Treatments Table */}
         <div className="mt-6 pt-4 border-t border-[#a28321]/40">

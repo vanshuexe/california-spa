@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { AdminBookings } from '../components/AdminBookings';
 import { TherapistManager } from '../components/TherapistManager';
 import { InquiriesManager } from '../components/InquiriesManager';
+import { ChatsManager } from '../components/ChatsManager';
 
 // Standalone admin area at /#admin with its own email + password login.
 // Access is enforced by the database: only users listed in public.admin_users can read
@@ -14,7 +15,7 @@ export const AdminPage: React.FC = () => {
   const [busy, setBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
-  const [section, setSection] = useState<'bookings' | 'inquiries' | 'therapists'>('bookings');
+  const [section, setSection] = useState<'bookings' | 'inquiries' | 'therapists' | 'chats'>('bookings');
   const [newCount, setNewCount] = useState(0);
 
   // Show the "new" badge on the Inquiries tab as soon as an admin is signed in.
@@ -72,14 +73,14 @@ export const AdminPage: React.FC = () => {
       <div className="w-full">
         <div className="flex flex-wrap justify-between gap-2 max-w-5xl mx-auto px-4">
           <div className="flex gap-2">
-            {(['bookings', 'inquiries', 'therapists'] as const).map((t) => (
+            {(['bookings', 'inquiries', 'chats', 'therapists'] as const).map((t) => (
               <button
                 key={t}
                 type="button"
                 onClick={() => setSection(t)}
                 className={`px-4 py-1.5 rounded font-bold text-sm ${section === t ? 'bg-[#5a0101] text-[#81d742]' : 'bg-white/60 text-[#840000]'}`}
               >
-                {t === 'bookings' ? '📋 Bookings' : t === 'therapists' ? '💆 Therapists' : '📩 Inquiries'}
+                {t === 'bookings' ? '📋 Bookings' : t === 'therapists' ? '💆 Therapists' : t === 'chats' ? '💬 Chats' : '📩 Inquiries'}
                 {t === 'inquiries' && newCount > 0 && (
                   <span className="ml-1.5 px-1.5 py-0.5 rounded-full bg-red-600 text-white text-xs">{newCount}</span>
                 )}
@@ -92,6 +93,7 @@ export const AdminPage: React.FC = () => {
         </div>
         {section === 'bookings' && <AdminBookings />}
         {section === 'inquiries' && <InquiriesManager onCountChange={setNewCount} />}
+        {section === 'chats' && userId && <ChatsManager adminId={userId} />}
         {section === 'therapists' && <TherapistManager />}
       </div>
     );

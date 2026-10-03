@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { DEFAULT_THERAPIST_PHOTO, useTherapists } from '../lib/useTherapists';
 
@@ -13,6 +13,36 @@ export const TherapistManager: React.FC = () => {
   const [photo, setPhoto] = useState('');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [logins, setLogins] = useState<Record<string, string>>({});
+  const [loginFor, setLoginFor] = useState<string | null>(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPass, setLoginPass] = useState('');
+
+  const loadLogins = async () => {
+    const { data } = await supabase.from('therapist_accounts').select('therapist_id, email');
+    const map: Record<string, string> = {};
+    for (const r of (data as { therapist_id: string; email: string }[]) || []) map[r.therapist_id] = r.email;
+    setLogins(map);
+  };
+  useEffect(() => {
+    loadLogins();
+  }, []);
+
+  const saveLogin = async (therapistId: string) => {
+    setMessage('');
+    const { data, error } = await supabase.functions.invoke('create-therapist-login', {
+      body: { therapist_id: therapistId, email: loginEmail, password: loginPass },
+    });
+    if (error || data?.error) {
+      setMessage(data?.error || error?.message || 'Could not create login.');
+      return;
+    }
+    setMessage('Login saved. Share the email and password with the therapist (they sign in at /#therapist).');
+    setLoginFor(null);
+    setLoginEmail('');
+    setLoginPass('');
+    loadLogins();
+  };
 
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +73,33 @@ export const TherapistManager: React.FC = () => {
     reload();
   };
 
+  const deleteLogin = async (id: string, tName: string) => {
+    if (!window.confirm(`Delete the login for ${tName}? They will no longer be able to sign in or chat.`)) return;
+    setMessage('');
+    const { data, error } = await supabase.functions.invoke('create-therapist-login', {
+      body: { action: 'delete', therapist_id: id },
+    });
+    if (error || data?.error) {
+      setMessage(data?.error || error?.message || 'Could not delete login.');
+      return;
+    }
+    setMessage(`Login for ${tName} deleted.`);
+    setLoginFor(null);
+    loadLogins();
+  };
+
   const remove = async (id: string, tName: string) => {
-    if (!window.confirm(`Remove ${tName}? Existing bookings keep the name.`)) return;
+    const hasLogin = Boolean(logins[id]);
+    if (!window.confirm(`Remove ${tName}${hasLogin ? ' and delete their login' : ''}? Existing bookings keep the name.`)) return;
+    if (hasLogin) {
+      const { data, error: e } = await supabase.functions.invoke('create-therapist-login', {
+        body: { action: 'delete', therapist_id: id },
+      });
+      if (e || data?.error) {
+        setMessage(data?.error || e?.message || 'Could not delete login.');
+        return;
+      }
+    }
     const { error } = await supabase.from('therapists').delete().eq('id', id);
     if (error) setMessage(error.message);
     else {
@@ -99,7 +154,8 @@ export const TherapistManager: React.FC = () => {
 
       <div className="grid gap-3 md:grid-cols-2">
         {therapists.map((t) => (
-          <div key={t.id} className="bg-[#f5f0e8] border border-[#a28321] rounded-lg p-3 flex items-center gap-3">
+          <React.Fragment key={t.id}>
+          <div className="bg-[#f5f0e8] border border-[#a28321] rounded-lg p-3 flex items-center gap-3">
             <img src={t.photo} alt={t.name} className="w-14 h-14 rounded-full object-cover border border-[#a28321]" />
             <div className="flex-1 min-w-0">
               <div className="font-bold text-[#840000]">{t.name}</div>
@@ -108,14 +164,53 @@ export const TherapistManager: React.FC = () => {
               </div>
               <div className="text-xs text-gray-600 truncate">{t.specialties.join(', ')}</div>
             </div>
-            <button
-              type="button"
-              onClick={() => remove(t.id, t.name)}
-              className="px-3 py-1.5 text-sm font-bold rounded border border-red-700 text-red-700 hover:bg-red-50"
-            >
-              Remove
-            </button>
+            <div className="flex flex-col gap-1.5 items-end">
+              <button
+                type="button"
+                onClick={() => remove(t.id, t.name)}
+                className="px-3 py-1.5 text-sm font-bold rounded border border-red-700 text-red-700 hover:bg-red-50"
+              >
+                Remove
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLoginFor(loginFor === t.id ? null : t.id);
+                  setLoginEmail(logins[t.id] || '');
+                  setLoginPass('');
+                }}
+                className="px-3 py-1.5 text-xs font-bold rounded bg-[#5a0101] text-[#81d742]"
+              >
+                {logins[t.id] ? '🔑 Reset login' : '🔑 Create login'}
+              </button>
+              {logins[t.id] && (
+                <button
+                  type="button"
+                  onClick={() => deleteLogin(t.id, t.name)}
+                  className="px-3 py-1.5 text-xs font-bold rounded border border-red-700 text-red-700 hover:bg-red-50"
+                >
+                  🗑 Delete login
+                </button>
+              )}
+            </div>
           </div>
+          {logins[t.id] && <div className="text-xs text-[#228b22] -mt-2 mb-1 px-1 md:col-span-2">Login: {logins[t.id]}</div>}
+          {loginFor === t.id && (
+            <div className="md:col-span-2 bg-white/70 border border-[#a28321] rounded-lg p-3 flex flex-wrap items-end gap-2">
+              <div>
+                <label className="block text-xs font-bold text-[#840000]">Email</label>
+                <input type="email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="form-control" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[#840000]">Password (8+ chars)</label>
+                <input type="text" value={loginPass} onChange={(e) => setLoginPass(e.target.value)} className="form-control" />
+              </div>
+              <button type="button" onClick={() => saveLogin(t.id)} className="btn btn-action px-4 py-2 text-sm">
+                Save login
+              </button>
+            </div>
+          )}
+          </React.Fragment>
         ))}
       </div>
     </div>

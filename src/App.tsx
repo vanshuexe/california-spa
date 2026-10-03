@@ -18,6 +18,8 @@ import { ContactPage } from './pages/ContactPage';
 import { GuestChatPage } from './pages/GuestChatPage';
 import { BookingPage } from './pages/BookingPage';
 import { AdminPage } from './pages/AdminPage';
+import { TherapistPage } from './pages/TherapistPage';
+import { ChatNotifier } from './components/ChatNotifier';
 
 function getPageFromHash(): PageId {
   const hash = window.location.hash.replace(/^#\/?/, '').trim();
@@ -35,6 +37,7 @@ function getPageFromHash(): PageId {
     'login',
     'register',
     'admin',
+    'therapist',
   ];
   if (validPages.includes(hash as PageId)) {
     return hash as PageId;
@@ -79,6 +82,24 @@ export default function App() {
       confirmState.onConfirm();
     }
   };
+
+  // The top navbar is fixed and its height changes with screen size (it is much taller on
+  // desktop), so the spacer under it follows its real height. Otherwise the top of every page
+  // (e.g. the admin tabs) hides behind the navbar.
+  const [spacerHeight, setSpacerHeight] = useState(90);
+  useEffect(() => {
+    const nav = document.querySelector<HTMLElement>('.navbar.navbar-inverse');
+    if (!nav) return;
+    const update = () => setSpacerHeight(Math.max(90, Math.ceil(nav.getBoundingClientRect().height)));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(nav);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
 
   // Sync with browser hash
   useEffect(() => {
@@ -128,7 +149,12 @@ export default function App() {
       <Navbar currentPage={currentPage} onNavigate={handleNavigate} />
 
       {/* Top spacer matching original site's #head.secondary */}
-      <header id="head" className="secondary" aria-hidden="true"></header>
+      <header
+        id="head"
+        className="secondary"
+        aria-hidden="true"
+        style={{ height: spacerHeight, minHeight: spacerHeight }}
+      ></header>
 
       {/* Main Container */}
       <main className="container mx-auto px-2 sm:px-4 py-4 flex-1">
@@ -156,11 +182,15 @@ export default function App() {
             <BookingPage onNavigate={handleNavigate} onShowAlert={showAlert} />
           )}
           {currentPage === 'admin' && <AdminPage />}
+          {currentPage === 'therapist' && <TherapistPage />}
         </div>
       </main>
 
       {/* Floating help chat (hidden on the admin page) */}
       {currentPage !== 'admin' && <HelpChatWidget onNavigate={handleNavigate} />}
+
+      {/* New chat message toasts for signed-in customers / therapists */}
+      <ChatNotifier onNavigate={handleNavigate} />
 
       {/* Background Spa Music Player */}
       <SpaMusicPlayer />

@@ -239,7 +239,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </li>
               <li className="flex items-start gap-3 col81d742 font-medium">
                 <span className="text-lg text-[#840000]">✨</span>
-                <span><strong>Fixed Transparent Pricing:</strong> Clear upfront rates with zero unexpected surprise charges.</span>
+                <span><strong>Fixed Transparent Pricing:</strong> Clear upfront service rates. Travel (two-way auto fare) is charged separately at actuals.</span>
               </li>
             </ul>
           </div>
@@ -288,7 +288,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                     {tier.formatted}
                   </span>
                   <span className="text-xs text-[#228b22] block mt-1 font-semibold">
-                    All-Inclusive Doorstep Home Service
+                    Service fee • Travel charged separately
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-[#228b22] leading-relaxed mb-4">

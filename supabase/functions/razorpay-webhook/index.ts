@@ -11,10 +11,24 @@ Deno.serve(async (req) => {
 
   try {
     const event = JSON.parse(raw);
+    const db = adminClient();
+
+    // Refund: mark the booking refunded + cancelled, which also closes the therapist chat.
+    if (event.event === 'refund.processed' || event.event === 'refund.created') {
+      const paymentId = event?.payload?.refund?.entity?.payment_id || event?.payload?.payment?.entity?.id;
+      if (event.event === 'refund.processed' && paymentId) {
+        await db
+          .from('bookings')
+          .update({ payment_status: 'refunded', status: 'cancelled' })
+          .eq('razorpay_payment_id', paymentId)
+          .neq('status', 'completed');
+      }
+      return new Response('ok');
+    }
+
     const payment = event?.payload?.payment?.entity;
     if (!payment?.order_id) return new Response('ok');
 
-    const db = adminClient();
     const { data: booking } = await db
       .from('bookings')
       .select('id')
