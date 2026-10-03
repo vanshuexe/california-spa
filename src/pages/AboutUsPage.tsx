@@ -168,7 +168,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
           <span className="text-2xl block mb-1">📅</span>
           <h5 className="font-bold text-[#840000] text-base mb-1">Flexible Scheduling</h5>
           <p className="text-xs text-[#228b22] leading-relaxed">
-            Available 9:00 AM to 7:00 PM every day including weekends and holidays.
+            Available 9:00 AM to 10:00 PM every day including weekends and holidays.
           </p>
         </div>
 
@@ -193,7 +193,7 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
       <div className="my-8 bg-[#f5f0e8] p-6 rounded-lg border-2 border-[#840000] shadow-md">
         <h3 className="text-2xl font-bold text-[#840000] mb-2">Hours and Charges</h3>
         <p className="font29 block mb-4">
-          Appointments are available daily from 9:00 AM to 7:00 PM across all parts of Bangalore.
+          Appointments are available daily from 9:00 AM to 10:00 PM across all parts of Bangalore.
           Transparent pricing starts from ₹1,799 for 60 minutes, ₹2,100 for 90 minutes, ₹3,400
           for 120 minutes, and ₹4,099 for 3 hours. The therapist's two-way auto fare is not included in the service fee and is paid by the client at the actual fare. Experience five-star spa quality at a fraction of hotel rates.
         </p>

@@ -52,7 +52,7 @@ const RULES: { keys: string[]; reply: string; actions?: Msg['actions'] }[] = [
   },
   {
     keys: ['time', 'timing', 'open', 'hour', 'kab', 'when', 'available'],
-    reply: 'Doorstep sessions are available daily, 9:00 AM to 7:00 PM. Pick your slot on the booking page.',
+    reply: 'Doorstep sessions are available daily, 9:00 AM to 10:00 PM. Pick your slot on the booking page.',
     actions: ['book'],
   },
   {

@@ -231,7 +231,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 col81d742 font-medium">
                 <span className="text-lg text-[#840000]">✨</span>
-                <span><strong>Flexible appointment scheduling:</strong> Book from 9:00 AM to 7:00 PM, 7 days a week including weekends.</span>
+                <span><strong>Flexible appointment scheduling:</strong> Book from 9:00 AM to 10:00 PM, 7 days a week including weekends.</span>
               </li>
               <li className="flex items-start gap-3 col81d742 font-medium">
                 <span className="text-lg text-[#840000]">✨</span>

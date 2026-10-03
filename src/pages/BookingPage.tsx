@@ -112,6 +112,9 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     '05:00 PM',
     '06:00 PM',
     '07:00 PM',
+    '08:00 PM',
+    '09:00 PM',
+    '10:00 PM',
   ];
 
   useEffect(() => {

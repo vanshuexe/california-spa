@@ -92,7 +92,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           <div className="text-3xl mb-2 text-[#b30af3]">⏰</div>
           <h4 className="text-lg font-bold text-[#840000] mb-1">Operating Hours</h4>
           <p className="text-sm text-[#228b22] font-semibold leading-relaxed">
-            9:00 AM to 7:00 PM<br />
+            9:00 AM to 10:00 PM<br />
             7 Days a Week (Open on Weekends & Holidays)
           </p>
           <p className="text-xs text-[#840000] font-bold mt-2">

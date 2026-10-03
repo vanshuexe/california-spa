@@ -396,7 +396,7 @@ export const MassageStylePage: React.FC<MassageStylePageProps> = ({ onNavigate }
       <div className="my-8 bg-[#f5f0e8] p-6 rounded-lg border-2 border-[#840000] shadow-md">
         <h3 className="text-2xl font-bold text-[#840000] mb-2">Hours and Booking Information</h3>
         <p className="font29 block mb-4">
-          Doorstep Royale Spa appointments are available daily from <strong>9:00 AM to 7:00 PM</strong> across all
+          Doorstep Royale Spa appointments are available daily from <strong>9:00 AM to 10:00 PM</strong> across all
           neighborhoods of Bangalore. Our therapists arrive at your preferred location with all
           necessary equipment, sanitized disposable linens, natural oils, and soothing music.
         </p>

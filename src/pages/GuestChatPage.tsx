@@ -49,7 +49,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
       {
         id: 'm-welcome-2',
         sender: 'admin',
-        text: `Our doorstep sessions are offered daily from 9:00 AM to 7:00 PM. Rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100), 120 Minutes (₹3,400), 180 Minutes / 3 Hours (₹4,099). You can also call or WhatsApp us anytime at ${SPA_PHONE}.`,
+        text: `Our doorstep sessions are offered daily from 9:00 AM to 10:00 PM. Rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100), 120 Minutes (₹3,400), 180 Minutes / 3 Hours (₹4,099). You can also call or WhatsApp us anytime at ${SPA_PHONE}.`,
         time: now,
       },
     ]);
@@ -86,7 +86,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
           'Our transparent rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100 - most popular), 120 Minutes (₹3,400), and 180 Minutes / 3 Hours (₹4,099). Express sessions: 30 Mins (₹999), 45 Mins (₹1,299). Travel (the therapist\'s two-way auto fare) is not included and is paid at the actual fare.';
       } else if (lower.includes('phone') || lower.includes('contact') || lower.includes('call') || lower.includes('number')) {
         replyText =
-          `You can call or WhatsApp Doorstep Royale Spa directly at ${SPA_PHONE} (9:00 AM to 7:00 PM daily).`;
+          `You can call or WhatsApp Doorstep Royale Spa directly at ${SPA_PHONE} (9:00 AM to 10:00 PM daily).`;
       } else if (lower.includes('female') || lower.includes('lady') || lower.includes('girl')) {
         replyText =
           'Yes, our team features skilled, certified female wellness therapists trained in Swedish, Deep Tissue, and Aromatherapy techniques. You can view therapist profiles and book on our booking page.';
@@ -95,7 +95,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
           'We provide doorstep service to your private home, apartment, villa, or hotel room across all neighborhoods of Bangalore.';
       } else if (lower.includes('book') || lower.includes('appointment') || lower.includes('time')) {
         replyText =
-          `To finalize your appointment, you can click "Book Online", or reply here with your preferred time slot (9 AM - 7 PM) and Bangalore location. Or call ${SPA_PHONE} for instant confirmation!`;
+          `To finalize your appointment, you can click "Book Online", or reply here with your preferred time slot (9 AM - 10 PM) and Bangalore location. Or call ${SPA_PHONE} for instant confirmation!`;
       } else if (lower.includes('style') || lower.includes('swedish') || lower.includes('deep tissue') || lower.includes('aroma')) {
         replyText =
           'We offer Swedish Massage, Deep Tissue Therapy, Aromatherapy with essential oils, Relaxation Massage, Head/Neck/Shoulder, and Foot Reflexology.';
