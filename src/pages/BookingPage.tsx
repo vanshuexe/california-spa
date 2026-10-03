@@ -90,6 +90,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     '60 Minutes': { price: 1799, label: '₹1,799 (60 Mins)' },
     '90 Minutes': { price: 2100, label: '₹2,100 (90 Mins - Recommended)' },
     '120 Minutes': { price: 3400, label: '₹3,400 (120 Mins - Ultimate Luxury)' },
+    '180 Minutes': { price: 4099, label: '₹4,099 (3 Hours - Signature)' },
     '30 Minutes': { price: 999, label: '₹999 (30 Mins Express)' },
     '45 Minutes': { price: 1299, label: '₹1,299 (45 Mins Express)' },
   };
@@ -550,7 +551,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               <label className="block text-sm font-bold text-[#840000] mb-2">
                 Select Duration & Pricing Tier <span className="text-danger">*</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {PRICING_DATA.map((tier) => (
                   <button
                     key={tier.duration}
@@ -795,7 +796,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
             </label>
 
             <div className="bg-[#e8decb] p-3 rounded text-xs text-[#228b22] leading-relaxed">
-              <strong>Doorstep Royale Spa Guarantee:</strong> Transparent fixed service rates (₹1,799 for 60m, ₹2,100 for 90m, ₹3400 for 120m) with no surge pricing; travel is charged separately at actual auto fare. The therapist brings sanitized fresh sheets, aromatic herbal oils, pain relief ointment, and ambient music directly to you.
+              <strong>Doorstep Royale Spa Guarantee:</strong> Transparent fixed service rates (₹1,799 for 60m, ₹2,100 for 90m, ₹3,400 for 120m, ₹4,099 for 3 hours) with no surge pricing; travel is charged separately at actual auto fare. The therapist brings sanitized fresh sheets, aromatic herbal oils, pain relief ointment, and ambient music directly to you.
             </div>
 
             <div className="text-center pt-2">

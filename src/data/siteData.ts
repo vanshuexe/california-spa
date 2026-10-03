@@ -38,10 +38,18 @@ export const PRICING_DATA: PricingTier[] = [
   {
     duration: '120 Minutes',
     price: 3400,
-    formatted: '₹3400',
+    formatted: '₹3,400',
     popular: false,
     badge: 'Ultimate Luxury',
     note: 'Extended head-to-toe full rejuvenation & holistic bliss.',
+  },
+  {
+    duration: '180 Minutes',
+    price: 4099,
+    formatted: '₹4,099',
+    popular: false,
+    badge: '3 Hours Signature',
+    note: 'Three-hour signature journey: full-body therapy, targeted focus areas and deep restoration.',
   },
 ];
 

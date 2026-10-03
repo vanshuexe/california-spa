@@ -49,7 +49,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
       {
         id: 'm-welcome-2',
         sender: 'admin',
-        text: `Our doorstep sessions are offered daily from 9:00 AM to 7:00 PM. Rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100), 120 Minutes (₹3,400). You can also call or WhatsApp us anytime at ${SPA_PHONE}.`,
+        text: `Our doorstep sessions are offered daily from 9:00 AM to 7:00 PM. Rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100), 120 Minutes (₹3,400), 180 Minutes / 3 Hours (₹4,099). You can also call or WhatsApp us anytime at ${SPA_PHONE}.`,
         time: now,
       },
     ]);
@@ -83,7 +83,7 @@ export const GuestChatPage: React.FC<GuestChatPageProps> = ({
 
       if (lower.includes('price') || lower.includes('cost') || lower.includes('rate') || lower.includes('charge')) {
         replyText =
-          'Our transparent rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100 - most popular), and 120 Minutes (₹3,400). Express sessions: 30 Mins (₹999), 45 Mins (₹1,299). Travel (the therapist\'s two-way auto fare) is not included and is paid at the actual fare.';
+          'Our transparent rates: 60 Minutes (₹1,799), 90 Minutes (₹2,100 - most popular), 120 Minutes (₹3,400), and 180 Minutes / 3 Hours (₹4,099). Express sessions: 30 Mins (₹999), 45 Mins (₹1,299). Travel (the therapist\'s two-way auto fare) is not included and is paid at the actual fare.';
       } else if (lower.includes('phone') || lower.includes('contact') || lower.includes('call') || lower.includes('number')) {
         replyText =
           `You can call or WhatsApp Doorstep Royale Spa directly at ${SPA_PHONE} (9:00 AM to 7:00 PM daily).`;

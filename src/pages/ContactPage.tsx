@@ -106,7 +106,8 @@ export const ContactPage: React.FC<ContactPageProps> = ({
           <p className="text-sm text-[#228b22] font-semibold leading-relaxed">
             60 Mins: ₹1,799<br />
             90 Mins: ₹2,100 (Recommended)<br />
-            120 Mins: ₹3,400
+            120 Mins: ₹3,400<br />
+            180 Mins (3 Hrs): ₹4,099
           </p>
           <button
             type="button"
@@ -244,6 +245,7 @@ export const ContactPage: React.FC<ContactPageProps> = ({
                 <option value="60 Minutes (₹1,799)">60 Minutes (₹1,799)</option>
                 <option value="90 Minutes (₹2,100)">90 Minutes (₹2,100)</option>
                 <option value="120 Minutes (₹3,400)">120 Minutes (₹3,400)</option>
+                <option value="180 Minutes (₹4,099)">180 Minutes / 3 Hours (₹4,099)</option>
                 <option value="30 Minutes Express (₹999)">30 Minutes Express (₹999)</option>
                 <option value="45 Minutes Express (₹1,299)">45 Minutes Express (₹1,299)</option>
               </select>

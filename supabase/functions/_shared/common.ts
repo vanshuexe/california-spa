@@ -22,6 +22,7 @@ export const DURATION_PRICES: Record<string, number> = {
   '60 Minutes': 1799,
   '90 Minutes': 2100,
   '120 Minutes': 3400,
+  '180 Minutes': 4099,
 };
 
 export async function hmacSha256Hex(secret: string, message: string): Promise<string> {

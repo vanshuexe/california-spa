@@ -26,7 +26,7 @@ const RULES: { keys: string[]; reply: string; actions?: Msg['actions'] }[] = [
   {
     keys: ['price', 'rate', 'cost', 'charge', 'kitna', 'paisa', 'fee', 'amount'],
     reply:
-      "Our rates: 30 min ₹999 • 45 min ₹1,299 • 60 min ₹1,799 • 90 min ₹2,100 (most popular) • 120 min ₹3,400. Travel is extra: the therapist's two-way auto fare is not included and is paid at the actual fare.",
+      "Our rates: 30 min ₹999 • 45 min ₹1,299 • 60 min ₹1,799 • 90 min ₹2,100 (most popular) • 120 min ₹3,400 • 3 hours ₹4,099. Travel is extra: the therapist's two-way auto fare is not included and is paid at the actual fare.",
     actions: ['book'],
   },
   {

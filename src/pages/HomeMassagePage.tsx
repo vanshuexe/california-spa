@@ -115,7 +115,7 @@ export const HomeMassagePage: React.FC<HomeMassagePageProps> = ({ onNavigate }) 
           Experience Doorstep Royale Spa Today
         </h4>
         <p className="col81d742 text-base leading-relaxed">
-          Doorstep Royale Spa delivers professional, certified massage therapies right to your doorstep anywhere in Bangalore. We offer transparent pricing: <strong>60 Minutes (₹1,799)</strong>, <strong>90 Minutes (₹2,100)</strong>, and <strong>120 Minutes (₹3,400)</strong>. Travel (the therapist's two-way auto fare, at actuals) is not included in these service fees. Call us directly or book online to select your preferred therapist and time.
+          Doorstep Royale Spa delivers professional, certified massage therapies right to your doorstep anywhere in Bangalore. We offer transparent pricing: <strong>60 Minutes (₹1,799)</strong>, <strong>90 Minutes (₹2,100)</strong>, <strong>120 Minutes (₹3,400)</strong>, and <strong>3 Hours (₹4,099)</strong>. Travel (the therapist's two-way auto fare, at actuals) is not included in these service fees. Call us directly or book online to select your preferred therapist and time.
         </p>
 
         <div className="text-center mt-6 flex flex-wrap justify-center gap-4">
