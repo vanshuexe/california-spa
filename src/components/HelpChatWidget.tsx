@@ -32,18 +32,18 @@ const RULES: { keys: string[]; reply: string; actions?: Msg['actions'] }[] = [
   {
     keys: ['book', 'appointment', 'slot', 'schedule', 'reserve'],
     reply:
-      'Booking is easy: choose your service, date, time and area on the Booking page, then pay online securely. Your booking is confirmed as soon as the payment goes through.',
+      'Booking is easy: choose your service, date, time and area on the Booking page, then pay a ₹500 or ₹1,000 advance online securely. Your booking is confirmed as soon as the advance payment is verified; the balance is paid on the day of service.',
     actions: ['book', 'whatsapp'],
   },
   {
     keys: ['pay', 'upi', 'card', 'razorpay', 'refund', 'paid'],
     reply:
-      'You pay online (UPI, cards, net banking, wallets) through Razorpay when you book. A booking stays "Pending" until payment is complete. You can retry from My Account if a payment fails.',
+      'You pay a ₹500 or ₹1,000 advance online (UPI, cards, net banking, wallets) through Razorpay to confirm the booking. The balance is paid on the day of service, online from My Account or to your therapist. A booking stays "Pending" until the advance is verified. You can retry from My Account if a payment fails.',
   },
   {
-    keys: ['cancel', 'reschedule', 'change', 'postpone'],
+    keys: ['cancel', 'reschedule', 'change', 'postpone', 'refund', 'advance'],
     reply:
-      'Sign in and open My Account to reschedule or cancel an upcoming booking. For refunds on paid bookings please call or WhatsApp us.',
+      'Sign in and open My Account to reschedule or cancel. Cancel or reschedule before the cancellation deadline shown with your booking (24 hours before the session by default, IST) and your advance is refunded in full (or moved to the new slot). After the deadline the advance is non-refundable, to the extent permitted by law. For help please call or WhatsApp us.',
     actions: ['whatsapp', 'call'],
   },
   {

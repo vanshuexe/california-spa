@@ -64,6 +64,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               <span className="text-xl sm:text-2xl">👑</span>
               <h1 className="text-2xl sm:text-3xl font-bold text-[#840000] tracking-wider uppercase m-0 font-['Patrick_Hand',cursive]">
                 {SPA_NAME}
+                <span className="sr-only"> - Massage at Home in Bangalore</span>
               </h1>
               <span className="text-xl sm:text-2xl">👑</span>
             </div>
@@ -135,11 +136,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <img
                   src={slide.src}
                   alt={slide.alt}
+                  width={1000}
+                  height={594}
+                  loading={idx === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={idx === 0 ? 'high' : 'auto'}
+                  decoding="async"
                   className="w-full h-full object-contain object-center"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      `https://californiamassage.in${slide.src}`;
-                  }}
                 />
               </div>
             ))}
@@ -174,10 +176,6 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             src="/assets/slider/images/Decorative-Line-Gold-PNG-Image.png"
             alt=""
             role="presentation"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'https://californiamassage.in/assets/slider/images/Decorative-Line-Gold-PNG-Image.png';
-            }}
           />
         </div>
 
@@ -338,7 +336,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 </p>
               </div>
               <a
-                href="#booking"
+                href="/book-appointment/"
                 className="text-xs font-bold text-[#b30af3] hover:underline inline-flex items-center gap-1 mt-2"
                 onClick={(e) => {
                   e.preventDefault();
@@ -376,7 +374,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <a
                   id="popularServiceFemale"
                   className="colb30af3 font-bold text-lg"
-                  href="#female-massage"
+                  href="/female-massage-bangalore/"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('female-massage');
@@ -393,7 +391,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 <a
                   id="popularServiceHome"
                   className="colb30af3 font-bold text-lg"
-                  href="#home-massage"
+                  href="/home-spa-massage-bangalore/"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('home-massage');

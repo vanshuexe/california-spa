@@ -13,17 +13,15 @@ export const FemaleMassagePage: React.FC<FemaleMassagePageProps> = ({ onNavigate
       <div className="text-center my-4">
         <img
           src="/assets/images/i2.png"
-          alt="Spa massage oils and towels laid out for a treatment"
+          alt="Massage oils and towels prepared for a female therapist home massage in Bangalore"
+          width={835}
+          height={448}
           className="rounded shadow-md max-w-full h-auto mx-auto border-2 border-[#a28321]"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://californiamassage.in/assets/images/i2.png';
-          }}
         />
       </div>
 
       <div className="border-title text-center my-6">
-        <h3>Female Massage Therapists - Bangalore</h3>
+        <h1>Female Massage Therapists - Bangalore</h1>
         <div className="ico-border">
           <i className="ico-bg flower"></i>
         </div>

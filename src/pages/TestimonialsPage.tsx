@@ -44,17 +44,15 @@ export const TestimonialsPage: React.FC<TestimonialsPageProps> = ({
       <div className="text-center my-4">
         <img
           src="/assets/images/testimonials1-300x297.png"
-          alt="Doorstep Royale Spa Client Testimonials"
+          alt="Doorstep Royale Spa client testimonials"
+          width={300}
+          height={297}
           className="mx-auto max-w-[220px] h-auto drop-shadow"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://californiamassage.in/assets/images/testimonials1-300x297.png';
-          }}
         />
       </div>
 
       <div className="pst text-center my-4">
-        <h3 className="text-3xl font-bold text-[#840000]">Client Testimonials</h3>
+        <h1 className="text-3xl font-bold text-[#840000]">Client Testimonials</h1>
         <div className="ico-border">
           <i className="ico-bg flower"></i>
         </div>

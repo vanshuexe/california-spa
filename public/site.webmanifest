@@ -1,0 +1,16 @@
+{
+  "name": "Doorstep Royale Spa",
+  "short_name": "Royale Spa",
+  "description": "Massage and spa at your doorstep in Bangalore. Open daily 9 AM to 10 PM.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6ecd9",
+  "theme_color": "#840000",
+  "lang": "en-IN",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

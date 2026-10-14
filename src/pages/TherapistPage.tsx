@@ -11,6 +11,8 @@ interface TBooking extends ChatBooking {
   address: string | null;
   special_instructions: string | null;
   location_type: string | null;
+  price: number | null;
+  amount_paid: number;
 }
 
 // Therapist panel at /#therapist. Access is enforced by the database: a therapist can only
@@ -152,7 +154,7 @@ export const TherapistPage: React.FC = () => {
   }
 
   const active = bookings.filter((b) => b.status === 'confirmed');
-  const past = bookings.filter((b) => b.status !== 'confirmed' && b.payment_status === 'paid');
+  const past = bookings.filter((b) => b.status !== 'confirmed' && (b.payment_status === 'paid' || b.payment_status === 'partial'));
   const openBooking = bookings.find((b) => b.id === openId) || null;
 
   const Card = (b: TBooking) => {
@@ -172,6 +174,9 @@ export const TherapistPage: React.FC = () => {
           <br />
           📍 {[b.address, b.area].filter(Boolean).join(', ') || b.location_type}
           {b.special_instructions && (<><br />📝 {b.special_instructions}</>)}
+          {b.status === 'confirmed' && b.price != null && b.price > b.amount_paid && (
+            <><br />💰 Balance due on the day: <b>₹{(b.price - b.amount_paid).toLocaleString('en-IN')}</b> (the customer may pay it online or to you)</>
+          )}
         </p>
         <div className="flex flex-wrap gap-2 mt-3">
           {chatAvailable(b) && (

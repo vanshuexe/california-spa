@@ -1,7 +1,7 @@
 // Razorpay -> server confirmation. Covers the case where the customer pays but closes the
 // browser before the verify call. Configure in Razorpay Dashboard > Webhooks with events
-// payment.captured and payment.failed, and the same secret as RAZORPAY_WEBHOOK_SECRET.
-import { adminClient, hmacSha256Hex, markPaid, safeEqual } from '../_shared/common.ts';
+// payment.captured, payment.failed, refund.processed and refund.failed, and the same secret as RAZORPAY_WEBHOOK_SECRET.
+import { adminClient, finalizePayment, hmacSha256Hex, safeEqual, sendRefundEmail } from '../_shared/common.ts';
 
 Deno.serve(async (req) => {
   const raw = await req.text();
@@ -13,15 +13,25 @@ Deno.serve(async (req) => {
     const event = JSON.parse(raw);
     const db = adminClient();
 
-    // Refund: mark the booking refunded + cancelled, which also closes the therapist chat.
-    if (event.event === 'refund.processed' || event.event === 'refund.created') {
-      const paymentId = event?.payload?.refund?.entity?.payment_id || event?.payload?.payment?.entity?.id;
-      if (event.event === 'refund.processed' && paymentId) {
-        await db
-          .from('bookings')
-          .update({ payment_status: 'refunded', status: 'cancelled' })
-          .eq('razorpay_payment_id', paymentId)
-          .neq('status', 'completed');
+    // Refunds: updates the payment + booking (a full refund cancels the booking, which also closes the chat).
+    if (event.event === 'refund.processed' || event.event === 'refund.failed') {
+      const refund = event?.payload?.refund?.entity;
+      const paymentId = refund?.payment_id || event?.payload?.payment?.entity?.id;
+      if (!refund?.id) return new Response('ok');
+      const rupeeAmount = Math.round(Number(refund.amount || 0) / 100) || null;
+
+      if (event.event === 'refund.processed') {
+        const { data } = await db.rpc('record_refund', { p_payment: paymentId, p_refund: refund.id, p_amount: rupeeAmount });
+        if (data?.booking_id) {
+          const { data: booking } = await db.from('bookings').select('*').eq('id', data.booking_id).maybeSingle();
+          await sendRefundEmail(booking, data.amount ?? rupeeAmount ?? 0, 'processed', refund.id);
+        }
+      } else {
+        const { data } = await db.rpc('record_refund_failed', { p_refund: refund.id });
+        if (data?.booking_id) {
+          const { data: booking } = await db.from('bookings').select('*').eq('id', data.booking_id).maybeSingle();
+          await sendRefundEmail(booking, rupeeAmount ?? 0, 'failed', refund.id);
+        }
       }
       return new Response('ok');
     }
@@ -29,22 +39,11 @@ Deno.serve(async (req) => {
     const payment = event?.payload?.payment?.entity;
     if (!payment?.order_id) return new Response('ok');
 
-    const { data: booking } = await db
-      .from('bookings')
-      .select('id')
-      .eq('razorpay_order_id', payment.order_id)
-      .maybeSingle();
-    if (!booking) return new Response('ok');
-
     if (event.event === 'payment.captured') {
-      await markPaid(db, booking.id, payment.order_id, payment.id);
+      await finalizePayment(db, payment.order_id, payment.id); // no-op if the browser already verified it
     } else if (event.event === 'payment.failed') {
-      // Booking stays unpaid/pending; never downgrade a paid booking.
-      await db
-        .from('bookings')
-        .update({ payment_status: 'failed' })
-        .eq('id', booking.id)
-        .neq('payment_status', 'paid');
+      // booking stays unpaid / pending; a paid booking is never downgraded
+      await db.rpc('record_payment_failed', { p_order: payment.order_id });
     }
     return new Response('ok');
   } catch (e) {

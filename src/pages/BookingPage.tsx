@@ -3,6 +3,10 @@ import { PageId } from '../types';
 import { supabase, isSupabaseConfigured, phoneToAuthEmail } from '../lib/supabase';
 import { payForBooking } from '../lib/payment';
 import { TravelNotice } from '../components/TravelNotice';
+import { BookingSummaryCard, PaymentBreakdown, PaymentPolicyBox } from '../components/PaymentPolicy';
+import { ADVANCE_OPTIONS, PAYMENT_LABEL, advanceOptionsFor, bookingStartMs, deadlineFor, formatIst, policyPoints, rupees, usePolicySettings } from '../data/paymentPolicy';
+import { openReceipt } from '../lib/receipt';
+import { TherapistPhoto } from '../components/TherapistPhoto';
 import { CHAT_EVENT, CHAT_OPEN_KEY, chatAvailable, chatState, useUnreadCounts } from '../lib/chat';
 import { ChatWindow } from '../components/ChatWindow';
 import { useTherapists } from '../lib/useTherapists';
@@ -34,6 +38,20 @@ interface MyBooking {
   client_email: string | null;
   therapist_id: string | null;
   chat_blocked: boolean;
+  amount_paid: number;
+  advance_amount: number | null;
+  refund_due: number;
+  cancel_deadline: string | null;
+  hold_expires_at: string | null;
+  cancel_reason: string | null;
+  policy_hours: number | null;
+}
+
+interface MyRefund {
+  booking_id: string;
+  amount: number;
+  status: string;
+  razorpay_refund_id: string | null;
 }
 
 interface BookingPageProps {
@@ -69,6 +87,11 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const { therapists } = useTherapists();
   const [paying, setPaying] = useState(false);
   const [travelAck, setTravelAck] = useState(false);
+  const [policyAck, setPolicyAck] = useState(false);
+  const { hours: policyHours } = usePolicySettings();
+  const [myRefunds, setMyRefunds] = useState<MyRefund[]>([]);
+  const [advance, setAdvance] = useState<number>(ADVANCE_OPTIONS[0]);
+  const [retryAdvance, setRetryAdvance] = useState<Record<string, number>>({});
 
   // Customer account state
   const [myBookings, setMyBookings] = useState<MyBooking[]>([]);
@@ -131,9 +154,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       return;
     }
     setBookingsLoading(true);
+    await supabase.rpc('expire_stale_holds'); // free slots held by unpaid bookings
+    const { data: refundRows } = await supabase.from('booking_refunds').select('booking_id, amount, status, razorpay_refund_id');
+    setMyRefunds((refundRows as MyRefund[]) || []);
     const { data, error } = await supabase
       .from('bookings')
-      .select('id, booking_ref, therapist, service_style, duration, booking_date, booking_time, area, price, status, payment_status, client_name, client_phone, client_email, therapist_id, chat_blocked')
+      .select('id, booking_ref, therapist, service_style, duration, booking_date, booking_time, area, price, status, payment_status, client_name, client_phone, client_email, therapist_id, chat_blocked, amount_paid, advance_amount, refund_due, cancel_deadline, hold_expires_at, cancel_reason, policy_hours')
       .eq('user_id', sessionUserId)
       .order('booking_date', { ascending: true });
     setBookingsLoading(false);
@@ -186,14 +212,41 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     .filter((b) => b.status === 'cancelled' || b.status === 'completed' || b.booking_date < todayStr)
     .reverse();
 
+  const advanceChoices = advanceOptionsFor(currentPriceInfo.price);
+  useEffect(() => {
+    if (!advanceChoices.includes(advance as (typeof ADVANCE_OPTIONS)[number])) {
+      setAdvance(advanceChoices[advanceChoices.length - 1] ?? ADVANCE_OPTIONS[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPriceInfo.price]);
+
   const handleCancelBooking = async (b: MyBooking) => {
-    if (!window.confirm(`Cancel booking ${b.booking_ref}?`)) return;
-    const { error } = await supabase.rpc('cancel_my_booking', { p_id: b.id });
-    if (error) {
-      onShowAlert('Cancel Failed', error.message);
+    const deadline = b.cancel_deadline ? new Date(b.cancel_deadline) : deadlineFor(b.booking_date, b.booking_time, b.policy_hours ?? policyHours);
+    const eligible = Date.now() <= deadline.getTime();
+    const outcome =
+      b.amount_paid <= 0
+        ? 'Nothing has been paid for this booking.'
+        : eligible
+          ? `You are cancelling before the deadline (${formatIst(deadline)}), so your ${rupees(b.amount_paid)} will be refunded.`
+          : `The cancellation deadline (${formatIst(deadline)}) has passed, so your advance of ${rupees(b.advance_amount ?? b.amount_paid)} is NON-refundable under our policy (to the extent permitted by law).`;
+    if (!window.confirm(`Cancel booking ${b.booking_ref}?\n\n${outcome}`)) return;
+    const { data, error } = await supabase.functions.invoke('cancel-booking', { body: { booking_id: b.id } });
+    if (error || data?.error) {
+      let msg = data?.error || error?.message || 'Could not cancel.';
+      try {
+        const body = await (error as { context?: Response } | null)?.context?.json?.();
+        if (body?.error) msg = body.error;
+      } catch {
+        /* keep message */
+      }
+      onShowAlert('Cancel Failed', msg);
       return;
     }
-    onShowAlert('Booking Cancelled', `Booking ${b.booking_ref} has been cancelled.`);
+    const due = Number(data?.refund_due ?? 0);
+    onShowAlert(
+      'Booking Cancelled',
+      `Booking ${b.booking_ref} has been cancelled.${due > 0 ? `\n\nA refund of ${rupees(due)} will be processed to your original payment method, usually within 5-7 working days.` : b.amount_paid > 0 ? '\n\nThe advance is not refundable because the booking was cancelled after the deadline.' : ''}\n\nWe have emailed you the details (if you gave an email address).`
+    );
     loadBookings();
   };
 
@@ -202,10 +255,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       onShowAlert('Invalid Date', 'Please choose today or a future date.');
       return;
     }
-    const { error } = await supabase
-      .from('bookings')
-      .update({ booking_date: reschedDate, booking_time: reschedTime })
-      .eq('id', b.id);
+    const { error } = await supabase.rpc('reschedule_my_booking', { p_id: b.id, p_date: reschedDate, p_time: reschedTime });
     if (error) {
       onShowAlert('Reschedule Failed', error.message);
       return;
@@ -234,6 +284,14 @@ export const BookingPage: React.FC<BookingPageProps> = ({
       );
       return;
     }
+    if (bookingStartMs(bookingDate, bookingTime) <= Date.now()) {
+      onShowAlert('Choose a Future Slot', 'The date and time you picked has already passed. Please choose a later time slot or date.');
+      return;
+    }
+    if (!policyAck) {
+      onShowAlert('Payment Policy', 'Please read and accept the advance payment and cancellation policy before paying.');
+      return;
+    }
     if (clientPhone.trim().length < 9) {
       onShowAlert('Invalid Phone', 'Please provide a valid 9-10 digit mobile number.');
       return;
@@ -244,32 +302,43 @@ export const BookingPage: React.FC<BookingPageProps> = ({
         ? 'Assigned Certified Therapist'
         : therapists.find((t) => t.id === selectedTherapistId)?.name || 'Certified Therapist';
 
-    const bookingRef = `DRS-BLR-${Math.floor(100000 + Math.random() * 900000)}`;
+    const newRef = () => `DRS-BLR-${Math.floor(100000 + Math.random() * 900000)}`;
+    let bookingRef = newRef();
 
     if (!isSupabaseConfigured) {
       onShowAlert('Setup Needed', 'Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to .env.local.');
       return;
     }
     const bookingId = crypto.randomUUID();
-    const { error } = await supabase.from('bookings').insert({
-      id: bookingId,
-      user_id: sessionUserId,
-      booking_ref: bookingRef,
-      client_name: clientName.trim(),
-      client_phone: clientPhone.trim(),
-      client_email: clientEmail.trim() || null,
-      therapist: therapistName,
-      service_style: serviceStyle,
-      duration: selectedDuration,
-      booking_date: bookingDate,
-      booking_time: bookingTime,
-      location_type: locationType,
-      area,
-      address: address.trim() || null,
-      special_instructions: specialInstructions.trim() || null,
-    });
+    // Booking IDs are unique in the database; in the rare case of a clash, try a fresh one.
+    let error: { message: string; code?: string } | null = null;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const res = await supabase.from('bookings').insert({
+        id: bookingId,
+        user_id: sessionUserId,
+        booking_ref: bookingRef,
+        client_name: clientName.trim(),
+        client_phone: clientPhone.trim(),
+        client_email: clientEmail.trim() || null,
+        therapist: therapistName,
+        service_style: serviceStyle,
+        duration: selectedDuration,
+        booking_date: bookingDate,
+        booking_time: bookingTime,
+        location_type: locationType,
+        area,
+        address: address.trim() || null,
+        special_instructions: specialInstructions.trim() || null,
+      });
+      error = res.error;
+      if (!error || !(error.code === '23505' && /booking_ref/.test(error.message))) break;
+      bookingRef = newRef();
+    }
     if (error) {
-      onShowAlert('Booking Failed', error.message);
+      onShowAlert(
+        'Booking Failed',
+        error.message.replace(/^DUPLICATE_BOOKING: |^PAST_SLOT: /, '')
+      );
       return;
     }
 
@@ -284,7 +353,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     setAddress('');
     setSpecialInstructions('');
 
-    await runPayment(bookingId, bookingRef, name, phone, email);
+    await runPayment(bookingId, bookingRef, name, phone, email, 'advance', advance);
   };
 
   const runPayment = async (
@@ -292,26 +361,41 @@ export const BookingPage: React.FC<BookingPageProps> = ({
     bookingRef: string,
     name: string,
     phone: string,
-    email?: string
+    email: string | undefined,
+    kind: 'advance' | 'balance',
+    advanceAmount?: number
   ) => {
     setPaying(true);
-    const result = await payForBooking({ bookingId, name, phone, email });
+    const result = await payForBooking({ bookingId, kind, advance: advanceAmount, policyAck: kind === 'advance', name, phone, email });
     setPaying(false);
 
     if (result.status === 'paid') {
-      onShowAlert(
-        'Payment Successful - Booking Confirmed!',
-        `Thank you ${name}! Your payment was received and your booking is confirmed.\n\nBooking ID: ${bookingRef}${email ? `\n\nA confirmation has been sent to ${email}.` : ''}\n\nReminder: the therapist's two-way auto fare is not included in the service fee and is paid by you at the actual fare.\n\nOur coordinator will call you from ${SPA_PHONES_TEXT} shortly.`
-      );
+      const sm = result.summary;
+      const lines = [
+        `Total service price: ${rupees(sm.price)}`,
+        `Paid so far: ${rupees(sm.amount_paid)}`,
+        `Remaining balance: ${rupees(sm.balance)}`,
+      ].join('\n');
+      if (kind === 'advance') {
+        onShowAlert(
+          'Advance Paid - Booking Confirmed!',
+          `Thank you ${name}! Your advance was verified and your booking is confirmed.\n\nBooking ID: ${bookingRef}\n\n${lines}\n\n${sm.balance > 0 ? 'Pay the balance on the day of service: online from My Account, or to your therapist (cash / UPI).' : ''}${email ? `\n\n${sm.receipt_emailed ? 'A receipt has been emailed to' : 'Your receipt is available in My Account. Email:'} ${email}.` : '\n\nYou can view your receipt in My Account.'}\n\nReminder: the therapist's two-way auto fare is not included in the service fee.\n\nOur coordinator will call you from ${SPA_PHONES_TEXT} shortly.`
+        );
+      } else {
+        onShowAlert(
+          'Balance Paid - Fully Paid!',
+          `Thank you ${name}! Your balance payment was verified.\n\nBooking ID: ${bookingRef}\n\n${lines}`
+        );
+      }
     } else if (result.status === 'failed') {
       onShowAlert(
         'Payment Failed',
-        `${result.message}\n\nYour booking ${bookingRef} is saved but UNPAID and not confirmed. You can retry from My Account (sign in) or call ${SPA_PHONES_TEXT}.`
+        `${result.message}\n\nYour booking ${bookingRef} is saved but NOT confirmed. You can retry from My Account (sign in) or call ${SPA_PHONES_TEXT}.`
       );
     } else {
       onShowAlert(
         'Payment Not Completed',
-        `Booking ${bookingRef} is saved but UNPAID and not confirmed until payment is made.`
+        `Booking ${bookingRef} is saved but NOT confirmed until the advance is paid.`
       );
     }
     loadBookings();
@@ -406,7 +490,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
           }}
         />
         <h1 className="page-title text-3xl font-bold text-[#840000]">
-          Doorstep Royale Spa Bangalore
+          Book a Home Massage in Bangalore
         </h1>
         <p className="text-sm font-semibold text-[#228b22] uppercase tracking-wider mt-1">
           Online Appointment Booking & Certified Therapist Profiles
@@ -783,6 +867,60 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               />
             </div>
 
+            <div className="bg-[#f5f0e8] border-2 border-[#840000] rounded-lg p-4">
+              <label className="block text-sm font-bold text-[#840000] mb-2">
+                Pay an advance to confirm your booking <span className="text-danger">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3 mb-3" role="radiogroup" aria-label="Advance payment amount">
+                {ADVANCE_OPTIONS.map((amt) => {
+                  const allowed = amt < currentPriceInfo.price;
+                  const active = advance === amt && allowed;
+                  return (
+                    <button
+                      key={amt}
+                      id={`advance-${amt}`}
+                      type="button"
+                      role="radio"
+                      aria-checked={active}
+                      disabled={!allowed}
+                      onClick={() => setAdvance(amt)}
+                      className={`p-3 rounded-lg border-2 text-center font-bold transition ${
+                        active ? 'bg-[#840000] text-[#ffdf88] border-[#840000]' : 'bg-white text-[#840000] border-[#a28321]'
+                      } ${allowed ? 'cursor-pointer' : 'opacity-40 cursor-not-allowed'}`}
+                    >
+                      <span className="text-xl block">{rupees(amt)}</span>
+                      <span className="text-[11px] font-semibold block">advance</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <BookingSummaryCard
+              therapist={selectedTherapistId === 'any' ? null : therapists.find((t) => t.id === selectedTherapistId) ?? null}
+              service={serviceStyle}
+              duration={selectedDuration}
+              date={bookingDate}
+              time={bookingTime}
+              area={area}
+              total={currentPriceInfo.price}
+              advance={advance}
+            />
+
+            <PaymentPolicyBox hours={policyHours} deadline={deadlineFor(bookingDate, bookingTime, policyHours)} />
+            <label className="flex items-start gap-2 text-sm text-[#5a0101] font-semibold cursor-pointer">
+              <input
+                id="bkPolicyAck"
+                type="checkbox"
+                checked={policyAck}
+                onChange={(e) => setPolicyAck(e.target.checked)}
+                className="mt-1"
+              />
+              <span>
+                I have read and accept the advance payment and cancellation policy. <span className="text-danger">*</span>
+              </span>
+            </label>
+
             <TravelNotice />
             <label className="flex items-start gap-2 text-sm text-[#5a0101] font-semibold cursor-pointer">
               <input
@@ -811,7 +949,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
               >
                 {paying
                   ? 'Opening secure payment…'
-                  : `Book & Pay Online (₹${currentPriceInfo.price.toLocaleString()} for ${selectedDuration})`}
+                  : `Pay ${rupees(advance)} Advance & Confirm Booking`}
               </button>
             </div>
           </form>
@@ -836,14 +974,12 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                 key={t.id}
                 className="bg-[#f5f0e8] border-2 border-[#840000] p-5 rounded-lg shadow-md flex flex-col sm:flex-row gap-4 items-center sm:items-start"
               >
-                <img
+                <TherapistPhoto
                   src={t.photo}
-                  alt={t.name}
+                  alt={`${t.name}, massage therapist at Doorstep Royale Spa`}
+                  width={128}
+                  height={128}
                   className="w-28 h-28 sm:w-32 sm:h-32 object-cover rounded-md border-2 border-[#a28321] flex-shrink-0 shadow"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      `https://californiamassage.in${t.photo}`;
-                  }}
                 />
 
                 <div className="flex-1 text-center sm:text-left">
@@ -855,7 +991,7 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                   </div>
 
                   <p className="text-xs text-[#b30af3] font-bold mt-1">
-                    {t.gender} • {t.age} Years • {t.experience} Experience
+                    {[t.gender, t.age ? `${t.age} Years` : '', t.experience ? `${t.experience} Experience` : ''].filter(Boolean).join(' • ')}
                   </p>
 
                   <p className="text-xs text-[#333] leading-relaxed my-2 font-sans">
@@ -922,10 +1058,10 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           <span className="font-bold text-[#840000]">Booking ID: {b.booking_ref}</span>
                           <span className="flex gap-2 text-xs font-bold">
                             <span className={`px-2 py-1 rounded ${b.status === 'cancelled' ? 'bg-red-100 text-red-800' : b.status === 'confirmed' ? 'bg-green-100 text-green-800' : b.status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              {b.status === 'cancelled' ? 'Cancelled' : b.status === 'confirmed' ? 'Confirmed' : b.status === 'completed' ? 'Completed' : 'Pending'}
+                              {b.status === 'cancelled' ? (b.cancel_reason === 'expired' ? 'Expired (unpaid)' : 'Cancelled') : b.status === 'confirmed' ? 'Confirmed' : b.status === 'completed' ? 'Completed' : 'Pending'}
                             </span>
-                            <span className={`px-2 py-1 rounded ${b.payment_status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-                              Payment: {b.payment_status.charAt(0).toUpperCase() + b.payment_status.slice(1)}
+                            <span className={`px-2 py-1 rounded ${b.payment_status === 'paid' ? 'bg-green-100 text-green-800' : b.payment_status === 'partial' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                              {PAYMENT_LABEL[b.payment_status] ?? b.payment_status}
                             </span>
                           </span>
                         </div>
@@ -933,8 +1069,67 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                           {b.duration} {b.service_style} with {b.therapist}
                           <br />
                           📅 {b.booking_date} at {b.booking_time} • 📍 {b.area}
-                          {b.price != null && <> • ₹{b.price.toLocaleString()}</>}
                         </p>
+                        {b.price != null && b.status !== 'cancelled' && (
+                          <PaymentBreakdown total={b.price} paid={b.amount_paid} className="mt-2 max-w-xs" />
+                        )}
+                        {b.status === 'pending' && b.amount_paid <= 0 && b.hold_expires_at && new Date(b.hold_expires_at).getTime() > Date.now() && (
+                          <p className="text-xs font-bold text-[#840000] mt-2 mb-0">
+                            ⏳ Your slot is held until {new Date(b.hold_expires_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kolkata' })} IST. Pay the advance to confirm it.
+                          </p>
+                        )}
+                        {(b.status === 'confirmed' || b.status === 'pending') && b.amount_paid > 0 && b.cancel_deadline && (
+                          <p className="text-xs mt-2 mb-0">
+                            {new Date(b.cancel_deadline).getTime() > Date.now() ? (
+                              <span className="text-[#228b22] font-bold">⏰ Free cancellation until {formatIst(b.cancel_deadline)}</span>
+                            ) : (
+                              <span className="text-red-700 font-bold">⚠️ Cancellation deadline passed ({formatIst(b.cancel_deadline)}): the advance is non-refundable.</span>
+                            )}
+                          </p>
+                        )}
+                        {b.status === 'cancelled' && (
+                          <div className="text-xs font-bold mt-2 space-y-0.5">
+                            {myRefunds
+                              .filter((r) => r.booking_id === b.id)
+                              .map((r) => (
+                                <div key={r.razorpay_refund_id ?? r.amount} className={r.status === 'processed' ? 'text-[#228b22]' : r.status === 'failed' ? 'text-red-700' : 'text-amber-700'}>
+                                  ↩️ Refund {rupees(r.amount)}: {r.status === 'processed' ? 'processed' : r.status === 'failed' ? 'could not be completed, we will contact you' : 'in progress'}
+                                  {r.razorpay_refund_id ? ` (ref ${r.razorpay_refund_id})` : ''}
+                                </div>
+                              ))}
+                            {b.refund_due > 0 && !myRefunds.some((r) => r.booking_id === b.id && r.status === 'processing') && (
+                              <div className="text-[#228b22]">
+                                ↩️ A refund of {rupees(b.refund_due)} is due. Our team will process it (usually 5-7 working days).
+                              </div>
+                            )}
+                            {b.refund_due === 0 && b.amount_paid > 0 && b.payment_status !== 'refunded' && (
+                              <div className="text-red-700">The advance of {rupees(b.amount_paid)} is non-refundable (cancelled after the deadline).</div>
+                            )}
+                          </div>
+                        )}
+                        {b.amount_paid > 0 && (
+                          <button
+                            type="button"
+                            className="mt-2 text-xs underline text-[#840000] font-bold"
+                            onClick={() => openReceipt({ ...b, price: b.price })}
+                          >
+                            🧾 View / print receipt
+                          </button>
+                        )}
+                        {b.status !== 'cancelled' && b.payment_status === 'partial' && b.price != null && b.price > b.amount_paid && (
+                          <div className="mt-2">
+                            <button
+                              type="button"
+                              disabled={paying}
+                              className="px-4 py-1.5 text-sm font-bold rounded bg-[#228b22] text-white hover:bg-[#1c721c] disabled:opacity-60"
+                              onClick={() =>
+                                runPayment(b.id, b.booking_ref, b.client_name, b.client_phone, b.client_email || undefined, 'balance')
+                              }
+                            >
+                              Pay Balance {rupees(b.price - b.amount_paid)}
+                            </button>
+                          </div>
+                        )}
                         {chatAvailable(b) && sessionUserId && (
                           <div className="mt-3">
                             <button
@@ -980,17 +1175,36 @@ export const BookingPage: React.FC<BookingPageProps> = ({
                               </div>
                             ) : (
                               <div className="flex flex-wrap gap-3">
-                                {b.payment_status !== 'paid' && b.payment_status !== 'refunded' && (
-                                  <button
-                                    type="button"
-                                    disabled={paying}
-                                    className="px-4 py-1.5 text-sm font-bold rounded bg-[#228b22] text-white hover:bg-[#1c721c] disabled:opacity-60"
-                                    onClick={() =>
-                                      runPayment(b.id, b.booking_ref, b.client_name, b.client_phone, b.client_email || undefined)
-                                    }
-                                  >
-                                    {b.payment_status === 'failed' ? 'Retry Payment' : 'Pay Now'}
-                                  </button>
+                                {b.amount_paid <= 0 && b.payment_status !== 'refunded' && (
+                                  <>
+                                    <select
+                                      aria-label="Advance amount"
+                                      value={retryAdvance[b.id] ?? b.advance_amount ?? ADVANCE_OPTIONS[0]}
+                                      onChange={(e) => setRetryAdvance((m) => ({ ...m, [b.id]: Number(e.target.value) }))}
+                                      className="form-control !w-auto !py-1"
+                                    >
+                                      {advanceOptionsFor(b.price ?? 99999).map((amt) => (
+                                        <option key={amt} value={amt}>{rupees(amt)} advance</option>
+                                      ))}
+                                    </select>
+                                    <button
+                                      type="button"
+                                      disabled={paying}
+                                      className="px-4 py-1.5 text-sm font-bold rounded bg-[#228b22] text-white hover:bg-[#1c721c] disabled:opacity-60"
+                                      onClick={() => {
+                                        const amt = retryAdvance[b.id] ?? b.advance_amount ?? ADVANCE_OPTIONS[0];
+                                        const dl = deadlineFor(b.booking_date, b.booking_time, b.policy_hours ?? policyHours);
+                                        const ok = window.confirm(
+                                          `Pay a ${rupees(amt)} advance for ${b.booking_ref}?\n\nCancellation deadline: ${formatIst(dl)}.\n\n${policyPoints(b.policy_hours ?? policyHours).slice(2, 4).join('\n\n')}\n\nTap OK to accept this policy and continue to payment.`
+                                        );
+                                        if (ok) {
+                                          runPayment(b.id, b.booking_ref, b.client_name, b.client_phone, b.client_email || undefined, 'advance', amt);
+                                        }
+                                      }}
+                                    >
+                                      {b.payment_status === 'failed' ? 'Retry Advance Payment' : 'Pay Advance & Confirm'}
+                                    </button>
+                                  </>
                                 )}
                                 <button
                                   type="button"

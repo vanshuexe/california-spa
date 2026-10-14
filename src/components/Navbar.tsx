@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from '../types';
 import { SPA_NAME, SPA_TAGLINE, SPA_LOGO_URL } from '../data/siteData';
+import { pathForPage } from '../seo/routes';
 
 interface NavbarProps {
   currentPage: PageId;
@@ -120,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate }) => {
                 >
                   <a
                     id={`navItem-${item.page}`}
-                    href={`#${item.page}`}
+                    href={pathForPage(item.page)}
                     data-page={item.page}
                     onClick={(e) => handleNavClick(e, item.page)}
                   >

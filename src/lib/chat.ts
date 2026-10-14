@@ -29,7 +29,7 @@ export function chatState(b: ChatBooking): { open: boolean; reason: string } {
   if (b.chat_blocked) return { open: false, reason: 'This chat has been blocked.' };
   if (b.status === 'cancelled') return { open: false, reason: 'Booking cancelled - chat closed.' };
   if (b.status === 'completed') return { open: false, reason: 'Service completed - chat closed.' };
-  if (b.payment_status !== 'paid') return { open: false, reason: 'Chat opens after payment is confirmed.' };
+  if (b.payment_status !== 'paid' && b.payment_status !== 'partial') return { open: false, reason: 'Chat opens after your advance payment is confirmed.' };
   if (!b.therapist_id) return { open: false, reason: 'A therapist will be assigned shortly.' };
   const closesAt = new Date(`${b.booking_date}T00:00:00Z`).getTime() + 2 * 24 * 3600 * 1000;
   if (Date.now() >= closesAt) return { open: false, reason: 'Chat closed 24 hours after the booking day.' };
@@ -40,7 +40,7 @@ export function chatState(b: ChatBooking): { open: boolean; reason: string } {
 // what really enforces it). Needs a verified payment: Paid + Confirmed (or Completed, for history)
 // with a therapist assigned. Pending / failed / cancelled / refunded bookings get no chat.
 export function chatAvailable(b: Pick<ChatBooking, 'status' | 'payment_status' | 'therapist_id'>): boolean {
-  return b.payment_status === 'paid' && (b.status === 'confirmed' || b.status === 'completed') && Boolean(b.therapist_id);
+  return (b.payment_status === 'paid' || b.payment_status === 'partial') && (b.status === 'confirmed' || b.status === 'completed') && Boolean(b.therapist_id);
 }
 
 export const MODERATION_WARNING =

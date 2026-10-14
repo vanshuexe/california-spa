@@ -13,17 +13,15 @@ export const HomeMassagePage: React.FC<HomeMassagePageProps> = ({ onNavigate }) 
       <div className="text-center my-4">
         <img
           src="/assets/images/home_massage.png"
-          alt="Doorstep Royale Spa therapist arriving for a home massage appointment"
+          alt="Doorstep Royale Spa therapist arriving for a home massage appointment in Bangalore"
+          width={870}
+          height={548}
           className="rounded shadow-md max-w-full h-auto mx-auto border-2 border-[#a28321]"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src =
-              'https://californiamassage.in/assets/images/home_massage.png';
-          }}
         />
       </div>
 
       <div className="border-title text-center my-6">
-        <h3>Doorstep Home Spa Experience - Bangalore</h3>
+        <h1>Doorstep Home Spa Experience - Bangalore</h1>
         <div className="ico-border">
           <i className="ico-bg flower"></i>
         </div>

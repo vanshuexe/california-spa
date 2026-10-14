@@ -42,12 +42,12 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
           >
             <img
               src={src}
-              alt={`About Doorstep Royale Spa slide ${idx + 1}`}
+              alt={['Therapist giving a relaxing back massage at home in Bangalore', 'Doorstep Royale Spa therapist preparing a home massage session', 'Calm spa setup with oils and fresh linen for a doorstep massage'][idx % 3]}
+              width={1000}
+              height={594}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+              decoding="async"
               className="w-full h-full object-cover object-center"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  `https://californiamassage.in${src}`;
-              }}
             />
           </div>
         ))}
@@ -122,12 +122,12 @@ export const AboutUsPage: React.FC<AboutUsPageProps> = ({ onNavigate }) => {
         <div className="md:col-span-4 text-center">
           <img
             src="/assets/images/type21.png"
-            alt="Doorstep Royale Spa therapies"
+            alt="Relaxing massage therapies delivered at home by Doorstep Royale Spa in Bangalore"
+            width={450}
+            height={446}
+            loading="lazy"
+            decoding="async"
             className="rounded shadow-md max-w-full h-auto mx-auto border-2 border-[#a28321]"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src =
-                'https://californiamassage.in/assets/images/type21.png';
-            }}
           />
         </div>
       </div>

@@ -1,0 +1,28 @@
+# Doorstep Royale Spa
+
+> Doorstep Royale Spa is a home and hotel-room massage and spa service in Bangalore, India. Trained therapists come to the customer's home, apartment or hotel room, every day from 9:00 AM to 10:00 PM. Bookings and payments are made online at https://doorsteproyalespa.com.
+
+## Key facts
+- Service area: Bangalore (Bengaluru), Karnataka, India. Areas include Koramangala, Indiranagar, Whitefield, HSR Layout, MG Road / Central Bangalore, JP Nagar, Jayanagar, Bellandur / Sarjapur Road, Electronic City, Marathahalli, Hebbal / North Bangalore, BTM Layout, Bannerghatta Road, Malleshwaram / Rajajinagar and Yelahanka.
+- Opening hours: every day, 9:00 AM to 10:00 PM, including weekends and holidays.
+- Service fees (INR): 30 minutes 999, 45 minutes 1,299, 60 minutes 1,799, 90 minutes 2,100, 120 minutes 3,400, 3 hours 4,099.
+- Travel is not included: the customer pays the therapist's two-way auto fare at the actual fare.
+- Massage styles: Swedish, deep tissue, aromatherapy, relaxation, head-neck-shoulder, foot, Balinese and traditional Thai massage.
+- Phone / WhatsApp: +91 9180471825, +91 9972459417.
+- Payment: an advance of 500 or 1,000 INR is paid online (UPI, cards, net banking, wallets) to confirm a booking; a therapist is then assigned. The balance is paid on the day of service, online or to the therapist.
+- Cancellation: cancel or reschedule before the cancellation deadline shown with the booking (24 hours before the session by default, India Standard Time) for a full refund of the advance (or move it to the new slot); after the deadline the advance is non-refundable, to the extent permitted by law.
+
+## Pages
+- [Home](https://doorsteproyalespa.com/): overview of the service
+- [Services & pricing](https://doorsteproyalespa.com/services-pricing/): all treatments and prices
+- [Book an appointment](https://doorsteproyalespa.com/book-appointment/): online booking
+- [FAQ](https://doorsteproyalespa.com/faq/): prices, travel charges, timings, areas, booking and cancellations
+- [Female massage therapists](https://doorsteproyalespa.com/female-massage-bangalore/)
+- [Home spa massage in Bangalore](https://doorsteproyalespa.com/home-spa-massage-bangalore/)
+- [About us](https://doorsteproyalespa.com/about-us/)
+- [Customer testimonials](https://doorsteproyalespa.com/testimonials/)
+- [Contact](https://doorsteproyalespa.com/contact/)
+- [Jobs](https://doorsteproyalespa.com/jobs/)
+
+## Optional
+- [Sitemap](https://doorsteproyalespa.com/sitemap.xml)

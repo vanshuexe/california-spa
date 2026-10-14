@@ -259,6 +259,7 @@ h3 {
   text-align: center;
 }
 
+.border-title h1,
 .border-title h3 {
   font-family: "Playfair Display", Georgia, serif !important;
   font-size: 22px !important;

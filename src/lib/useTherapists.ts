@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { THERAPISTS_DATA } from '../data/siteData';
 import { TherapistProfile } from '../types';
+import { THERAPIST_PLACEHOLDER } from './therapistPhoto';
 
 interface TherapistRow {
   id: string;
@@ -16,7 +17,7 @@ interface TherapistRow {
   bio: string | null;
 }
 
-export const DEFAULT_THERAPIST_PHOTO = '/assets/slider/images/female-massage-bangalore.png';
+export const DEFAULT_THERAPIST_PHOTO = THERAPIST_PLACEHOLDER;
 
 const fromRow = (r: TherapistRow): TherapistProfile => ({
   id: r.id,
@@ -31,10 +32,11 @@ const fromRow = (r: TherapistRow): TherapistProfile => ({
   bio: r.bio ?? '',
 });
 
-// Therapists come from the database (managed in the admin panel). The built-in list is only
-// used while loading or if Supabase is unreachable / not configured.
+// Therapists come from the database (managed in the admin panel). The built-in sample list is only
+// used when Supabase is not configured at all (local demo); it is never shown to customers otherwise.
 export function useTherapists() {
-  const [therapists, setTherapists] = useState<TherapistProfile[]>(THERAPISTS_DATA);
+  const [therapists, setTherapists] = useState<TherapistProfile[]>(isSupabaseConfigured ? [] : THERAPISTS_DATA);
+  const [loaded, setLoaded] = useState(!isSupabaseConfigured);
 
   const reload = useCallback(async () => {
     if (!isSupabaseConfigured) return;
@@ -43,11 +45,12 @@ export function useTherapists() {
       .select('*')
       .order('created_at', { ascending: true });
     if (!error && data) setTherapists((data as TherapistRow[]).map(fromRow));
+    setLoaded(true);
   }, []);
 
   useEffect(() => {
     reload();
   }, [reload]);
 
-  return { therapists, reload };
+  return { therapists, reload, loaded };
 }

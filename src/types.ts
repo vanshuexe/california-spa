@@ -13,7 +13,11 @@ export type PageId =
   | 'login'
   | 'register'
   | 'admin'
-  | 'therapist';
+  | 'therapist'
+  | 'faq'
+  | 'not-found'
+  | `service:${string}`
+  | `area:${string}`;
 
 export interface ServiceItem {
   id: string;

@@ -42,12 +42,12 @@ export const MassageStylePage: React.FC<MassageStylePageProps> = ({ onNavigate }
           >
             <img
               src={src}
-              alt={`Doorstep Royale Spa wellness slide ${idx + 1}`}
+              alt={['Massage therapist treating a client at home in Bangalore', 'Swedish and deep tissue massage at your doorstep', 'Relaxing spa treatment with aromatic oils'][idx % 3]}
+              width={1000}
+              height={594}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+              decoding="async"
               className="w-full h-full object-cover object-center"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src =
-                  `https://californiamassage.in${src}`;
-              }}
             />
           </div>
         ))}

@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, lazy, useState, useEffect } from 'react';
 import { PageId } from './types';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { SpaMusicPlayer } from './components/SpaMusicPlayer';
 import { HelpChatWidget } from './components/HelpChatWidget';
 import { GlobalModal, AlertState, ConfirmState } from './components/GlobalModal';
+import { ChatNotifier } from './components/ChatNotifier';
+import { applySeo } from './seo/head';
+import { getSeo } from './seo/meta';
+import { pageForLegacyHash, pageForPath, pathForPage } from './seo/routes';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -17,36 +21,36 @@ import { JobsPage } from './pages/JobsPage';
 import { ContactPage } from './pages/ContactPage';
 import { GuestChatPage } from './pages/GuestChatPage';
 import { BookingPage } from './pages/BookingPage';
-import { AdminPage } from './pages/AdminPage';
-import { TherapistPage } from './pages/TherapistPage';
-import { ChatNotifier } from './components/ChatNotifier';
+import { FaqPage } from './pages/FaqPage';
+import { ServicePage } from './pages/ServicePage';
+import { AreaPage } from './pages/AreaPage';
+import { NotFoundPage } from './pages/NotFoundPage';
 
-function getPageFromHash(): PageId {
-  const hash = window.location.hash.replace(/^#\/?/, '').trim();
-  const validPages: PageId[] = [
-    'home',
-    'aboutus',
-    'massage-style',
-    'female-massage',
-    'home-massage',
-    'testimonials',
-    'jobs',
-    'contact',
-    'guest',
-    'booking',
-    'login',
-    'register',
-    'admin',
-    'therapist',
-  ];
-  if (validPages.includes(hash as PageId)) {
-    return hash as PageId;
+// Staff areas are not indexed and are only needed by a few people: load them on demand.
+const AdminPage = lazy(() => import('./pages/AdminPage').then((m) => ({ default: m.AdminPage })));
+const TherapistPage = lazy(() => import('./pages/TherapistPage').then((m) => ({ default: m.TherapistPage })));
+
+const PageLoading = () => <div className="p-10 text-center text-[#840000]">Loading…</div>;
+
+// Works in the browser and during pre-rendering (no window there).
+function getInitialPage(): PageId {
+  if (typeof window === 'undefined') return 'home';
+  // Old links like /#booking keep working: move them to the real URL.
+  const legacy = pageForLegacyHash(window.location.hash);
+  if (legacy && window.location.hash.length > 1) {
+    window.history.replaceState(null, '', pathForPage(legacy));
+    return legacy;
   }
-  return 'home';
+  return pageForPath(window.location.pathname);
 }
 
-export default function App() {
-  const [currentPage, setCurrentPage] = useState<PageId>(getPageFromHash);
+interface AppProps {
+  /** Set by the pre-renderer so each page is rendered without a browser. */
+  initialPage?: PageId;
+}
+
+export default function App({ initialPage }: AppProps) {
+  const [currentPage, setCurrentPage] = useState<PageId>(() => initialPage ?? getInitialPage());
 
   // Global modals
   const [alertState, setAlertState] = useState<AlertState>({
@@ -67,10 +71,6 @@ export default function App() {
 
   const closeAlert = () => {
     setAlertState((prev) => ({ ...prev, isOpen: false }));
-  };
-
-  const showConfirm = (title: string, message: string, onConfirm?: () => void) => {
-    setConfirmState({ isOpen: true, title, message, onConfirm });
   };
 
   const closeConfirm = () => {
@@ -101,28 +101,43 @@ export default function App() {
     };
   }, []);
 
-  // Sync with browser hash
+  // Back / forward buttons, and any old #hash links that appear later.
   useEffect(() => {
-    const handleHashChange = () => {
-      const page = getPageFromHash();
-      setCurrentPage(page);
+    const onPop = () => setCurrentPage(pageForPath(window.location.pathname));
+    const onHash = () => {
+      const legacy = pageForLegacyHash(window.location.hash);
+      if (legacy && window.location.hash.length > 1) {
+        window.history.replaceState(null, '', pathForPage(legacy));
+        setCurrentPage(legacy);
+      }
     };
-
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', onPop);
+    window.addEventListener('hashchange', onHash);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      window.removeEventListener('hashchange', onHash);
+    };
   }, []);
 
+  // Keep title, description, canonical, robots, Open Graph and structured data in sync.
+  useEffect(() => {
+    applySeo(getSeo(currentPage));
+    // @ts-expect-error gtag is only present when Google Analytics is configured
+    if (typeof window.gtag === 'function') window.gtag('event', 'page_view', { page_path: pathForPage(currentPage) });
+  }, [currentPage]);
+
   const handleNavigate = (page: PageId) => {
-    setCurrentPage(page);
-    window.location.hash = page;
+    const target: PageId = page === 'massage-style' ? 'services' : page;
+    const path = pathForPage(target);
+    if (window.location.pathname !== path) window.history.pushState(null, '', path);
+    setCurrentPage(target);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSocialShare = (network: string) => {
-    const url = encodeURIComponent(window.location.origin || 'https://californiamassage.in');
-    const title = encodeURIComponent(
-      'Doorstep Royale Spa - Luxury Wellness, At Your Doorstep'
-    );
+    const shareTarget = getSeo(currentPage).canonical;
+    const url = encodeURIComponent(shareTarget);
+    const title = encodeURIComponent('Doorstep Royale Spa - Luxury Wellness, At Your Doorstep');
 
     let shareUrl = '';
     if (network === 'Facebook') {
@@ -139,7 +154,7 @@ export default function App() {
     try {
       window.open(shareUrl, '_blank', 'width=600,height=400,noopener,noreferrer');
     } catch {
-      showAlert('Share', `Share California Spa on ${network}: ${window.location.origin}`);
+      showAlert('Share', `Share Doorstep Royale Spa on ${network}: ${shareTarget}`);
     }
   };
 
@@ -181,8 +196,24 @@ export default function App() {
           {(currentPage === 'booking' || currentPage === 'login' || currentPage === 'register') && (
             <BookingPage onNavigate={handleNavigate} onShowAlert={showAlert} />
           )}
-          {currentPage === 'admin' && <AdminPage />}
-          {currentPage === 'therapist' && <TherapistPage />}
+          {currentPage === 'faq' && <FaqPage onNavigate={handleNavigate} />}
+          {currentPage.startsWith('service:') && (
+            <ServicePage slug={currentPage.slice(8)} onNavigate={handleNavigate} />
+          )}
+          {currentPage.startsWith('area:') && (
+            <AreaPage slug={currentPage.slice(5)} onNavigate={handleNavigate} />
+          )}
+          {currentPage === 'not-found' && <NotFoundPage onNavigate={handleNavigate} />}
+          {currentPage === 'admin' && (
+            <Suspense fallback={<PageLoading />}>
+              <AdminPage />
+            </Suspense>
+          )}
+          {currentPage === 'therapist' && (
+            <Suspense fallback={<PageLoading />}>
+              <TherapistPage />
+            </Suspense>
+          )}
         </div>
       </main>
 

@@ -54,7 +54,7 @@ export const JobsPage: React.FC<JobsPageProps> = ({ onNavigate, onShowAlert }) =
   return (
     <article className="col-xs-12 maincontent col-md-12 col-sm-12 max-w-5xl mx-auto px-4 sm:px-6">
       <div className="border-title text-center my-4">
-        <h3>Career Opportunities at Doorstep Royale Spa</h3>
+        <h1>Career Opportunities at Doorstep Royale Spa</h1>
         <div className="ico-border">
           <i className="ico-bg flower"></i>
         </div>
