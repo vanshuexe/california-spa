@@ -62,6 +62,69 @@ interface PayArgs {
   email?: string;
 }
 
+const PENDING_KEY = 'drs.pendingPayment';
+const rememberPending = (bookingId: string, kind: string) => {
+  try {
+    localStorage.setItem(PENDING_KEY, JSON.stringify({ bookingId, kind, ts: Date.now() }));
+  } catch {
+    /* private mode */
+  }
+};
+const forgetPending = () => {
+  try {
+    localStorage.removeItem(PENDING_KEY);
+  } catch {
+    /* ignore */
+  }
+};
+
+interface ReconcileResult {
+  recorded: number;
+  booking: { booking_ref: string; status: string; payment_status: string; price: number | null; amount_paid: number; advance_amount: number | null } | null;
+}
+
+// Asks the server to check with Razorpay whether this booking's checkout was actually paid.
+// (A UPI app can take the customer away from the page, so the browser may never hear "success".)
+export async function reconcileBooking(bookingId: string): Promise<ReconcileResult | null> {
+  const { data, error } = await supabase.functions.invoke('reconcile-payments', { body: { booking_id: bookingId } });
+  if (error || !data?.ok) return null;
+  return { recorded: Number(data.recorded || 0), booking: data.booking ?? null };
+}
+
+const summaryFrom = (b: NonNullable<ReconcileResult['booking']>): PaymentSummary => ({
+  price: b.price ?? 0,
+  amount_paid: b.amount_paid,
+  balance: Math.max((b.price ?? 0) - b.amount_paid, 0),
+  payment_status: b.payment_status,
+  status: b.status,
+  receipt_emailed: false,
+});
+
+// Run when the booking page opens: if the customer came back from a UPI app (or reopened the page)
+// after paying, find out and confirm the booking. Returns the payment to announce, if any.
+export async function recoverPendingPayment(): Promise<{ summary: PaymentSummary; bookingRef: string; kind: string } | null> {
+  let pending: { bookingId: string; kind: string; ts: number } | null = null;
+  try {
+    pending = JSON.parse(localStorage.getItem(PENDING_KEY) || 'null');
+  } catch {
+    pending = null;
+  }
+  if (!pending || Date.now() - pending.ts > 3 * 3600_000) {
+    forgetPending();
+    return null;
+  }
+  const r = await reconcileBooking(pending.bookingId);
+  if (!r?.booking) return null;
+  forgetPending();
+  if (r.recorded > 0 || r.booking.amount_paid > 0) {
+    return { summary: summaryFrom(r.booking), bookingRef: r.booking.booking_ref, kind: pending.kind };
+  }
+  return null;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+
 // 1) the server creates the order (it decides the amount)  2) Razorpay checkout opens
 // 3) the server verifies Razorpay's signature, records the payment and confirms the booking.
 // Nothing is trusted from the checkout "success" screen alone. Any failure leaves the booking unpaid.
@@ -78,6 +141,8 @@ export async function payForBooking({ bookingId, kind, advance, policyAck, name,
   }
 
   return new Promise<PaymentResult>((resolve) => {
+    let lastFailure = '';
+    rememberPending(bookingId, kind);
     const rzp = new window.Razorpay!({
       key: order.key_id,
       amount: order.amount,
@@ -96,11 +161,19 @@ export async function payForBooking({ bookingId, kind, advance, policyAck, name,
           body: { booking_id: bookingId, ...resp },
         });
         if (vErr || !data?.verified) {
+          // verification call failed: the server can still confirm it by asking Razorpay directly
+          const r = await reconcileBooking(bookingId);
+          if (r?.booking && r.booking.amount_paid > 0) {
+            forgetPending();
+            resolve({ status: 'paid', summary: summaryFrom(r.booking) });
+            return;
+          }
           resolve({
             status: 'failed',
-            message: 'Payment could not be verified. If money was deducted, it will be reconciled automatically.',
+            message: 'We could not confirm the payment yet. If money was deducted, your booking is confirmed automatically within a few minutes, or call us.',
           });
         } else {
+          forgetPending();
           resolve({
             status: 'paid',
             summary: {
@@ -114,10 +187,28 @@ export async function payForBooking({ bookingId, kind, advance, policyAck, name,
           });
         }
       },
-      modal: { ondismiss: () => resolve({ status: 'dismissed' }) },
+      modal: {
+        // The customer closed checkout. They may still have approved the payment in their UPI app,
+        // so ask the server to check with Razorpay before telling them it did not go through.
+        ondismiss: async () => {
+          await sleep(2500);
+          const r = await reconcileBooking(bookingId);
+          if (r?.booking && r.booking.amount_paid > 0) {
+            forgetPending();
+            resolve({ status: 'paid', summary: summaryFrom(r.booking) });
+          } else if (lastFailure) {
+            forgetPending();
+            resolve({ status: 'failed', message: lastFailure });
+          } else {
+            resolve({ status: 'dismissed' });
+          }
+        },
+      },
     });
+    // A failed attempt leaves checkout open so the customer can retry with another method:
+    // remember the reason, and decide when checkout closes.
     rzp.on('payment.failed', (resp: any) => {
-      resolve({ status: 'failed', message: resp?.error?.description || 'Payment failed.' });
+      lastFailure = resp?.error?.description || 'Payment failed.';
     });
     rzp.open();
   });

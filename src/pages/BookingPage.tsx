@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageId } from '../types';
 import { supabase, isSupabaseConfigured, phoneToAuthEmail } from '../lib/supabase';
-import { payForBooking } from '../lib/payment';
+import { payForBooking, recoverPendingPayment } from '../lib/payment';
 import { TravelNotice } from '../components/TravelNotice';
 import { BookingSummaryCard, PaymentBreakdown, PaymentPolicyBox } from '../components/PaymentPolicy';
 import { ADVANCE_OPTIONS, PAYMENT_LABEL, advanceOptionsFor, bookingStartMs, deadlineFor, formatIst, policyPoints, rupees, usePolicySettings } from '../data/paymentPolicy';
@@ -211,6 +211,25 @@ export const BookingPage: React.FC<BookingPageProps> = ({
   const previousBookings = myBookings
     .filter((b) => b.status === 'cancelled' || b.status === 'completed' || b.booking_date < todayStr)
     .reverse();
+
+  // Came back from a UPI app / reopened the page after paying? Ask the server (which asks Razorpay) and
+  // confirm the booking, so a paid customer is never left looking at an unconfirmed booking.
+  useEffect(() => {
+    recoverPendingPayment().then((res) => {
+      if (!res) return;
+      const sm = res.summary;
+      onShowAlert(
+        res.kind === 'balance' ? 'Balance Payment Received' : 'Payment Received - Booking Confirmed!',
+        `Your payment was received and your booking ${res.bookingRef} is confirmed.
+
+Total service price: ${rupees(sm.price)}
+Paid so far: ${rupees(sm.amount_paid)}
+Remaining balance: ${rupees(sm.balance)}`
+      );
+      loadBookings();
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const advanceChoices = advanceOptionsFor(currentPriceInfo.price);
   useEffect(() => {
